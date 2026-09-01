@@ -1,0 +1,286 @@
+# ==================================================
+# Operating system
+# ==================================================
+.DS_Store
+Thumbs.db
+
+
+# ==================================================
+# IDE
+# ==================================================
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.swp
+*.swo
+
+
+# ==================================================
+# Environment variables and secrets
+# ==================================================
+.env
+.env.*
+!.env.example
+
+**/application-local.yml
+**/application-local.yaml
+**/application-secret.yml
+**/application-secret.yaml
+
+google-services.json
+GoogleService-Info.plist
+firebase-adminsdk*.json
+
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
+
+
+# ==================================================
+# Logs and temporary files
+# ==================================================
+*.log
+logs/
+tmp/
+temp/
+.cache/
+coverage/
+htmlcov/
+
+
+# ==================================================
+# Java and Spring Boot
+# ==================================================
+service-server/.gradle/
+service-server/build/
+service-server/out/
+service-server/bin/
+
+*.class
+*.jar
+*.war
+*.ear
+hs_err_pid*
+replay_pid*
+
+# Gradle Wrapper는 Git에 포함해야 함
+!gradle-wrapper.jar
+
+
+# ==================================================
+# Flutter and Dart
+# ==================================================
+app/.dart_tool/
+app/.flutter-plugins
+app/.flutter-plugins-dependencies
+app/.packages
+app/.pub-cache/
+app/.pub/
+app/build/
+app/coverage/
+app/doc/api/
+
+app/android/.gradle/
+app/android/local.properties
+app/android/app/debug/
+app/android/app/profile/
+app/android/app/release/
+
+app/ios/Pods/
+app/ios/.symlinks/
+app/ios/Flutter/ephemeral/
+app/ios/Flutter/Generated.xcconfig
+app/ios/Flutter/flutter_export_environment.sh
+
+app/macos/Pods/
+app/macos/.symlinks/
+app/macos/Flutter/ephemeral/
+
+app/windows/flutter/ephemeral/
+app/linux/flutter/ephemeral/
+
+*.lock
+!app/pubspec.lock
+
+
+# ==================================================
+# Node.js, React and Vite
+# ==================================================
+admin-web/node_modules/
+admin-web/dist/
+admin-web/build/
+admin-web/.vite/
+admin-web/.eslintcache
+admin-web/coverage/
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# 패키지 잠금 파일은 Git에 포함
+!package-lock.json
+!yarn.lock
+!pnpm-lock.yaml
+
+
+# ==================================================
+# Python
+# ==================================================
+__pycache__/
+*.py[cod]
+*$py.class
+
+*.so
+*.egg
+*.egg-info/
+.eggs/
+dist/
+build/
+
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+
+.venv/
+venv/
+env/
+ENV/
+
+.ipynb_checkpoints/
+
+# Python 의존성 잠금 파일은 Git에 포함
+!requirements.txt
+!requirements-dev.txt
+!poetry.lock
+!uv.lock
+
+
+# ==================================================
+# AI datasets
+# ==================================================
+ai-training/datasets/raw/*
+!ai-training/datasets/raw/.gitkeep
+
+ai-training/datasets/interim/*
+!ai-training/datasets/interim/.gitkeep
+
+ai-training/datasets/processed/*
+!ai-training/datasets/processed/.gitkeep
+
+ai-training/datasets/splits/*
+!ai-training/datasets/splits/.gitkeep
+
+
+# ==================================================
+# AI training outputs
+# ==================================================
+ai-training/runs/*
+!ai-training/runs/.gitkeep
+
+ai-training/checkpoints/*
+!ai-training/checkpoints/.gitkeep
+
+ai-server/models/*
+!ai-server/models/.gitkeep
+
+runs/
+wandb/
+mlruns/
+
+
+# ==================================================
+# Model weights and exports
+# ==================================================
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.engine
+*.torchscript
+*.tflite
+*.mlmodel
+*.safetensors
+
+
+# ==================================================
+# Large datasets and media
+# ==================================================
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.rar
+
+*.mp4
+*.avi
+*.mov
+*.mkv
+
+*.npy
+*.npz
+*.pkl
+*.pickle
+*.parquet
+
+
+# ==================================================
+# Database
+# ==================================================
+*.db
+*.sqlite
+*.sqlite3
+
+database/backups/
+database/dumps/
+
+*.dump
+*.sql.gz
+
+
+# ==================================================
+# Docker and infrastructure
+# ==================================================
+docker-compose.override.yml
+
+infrastructure/environments/*.env
+!infrastructure/environments/.env.example
+
+
+# ==================================================
+# Test reports
+# ==================================================
+test-results/
+reports/
+allure-results/
+allure-report/
+
+
+# ==================================================
+# Local AI tools
+# ==================================================
+.claude/
+.codex/
+AGENTS.md
+
+
+# ==================================================
+# Keep empty directories
+# ==================================================
+!.gitkeep
+# ==================================================
+# Local AI tools
+# ==================================================
+.claude/
+.codex/
+AGENTS.md
+**/AGENTS.md
+AGENTS.local.md
+**/AGENTS.local.md
