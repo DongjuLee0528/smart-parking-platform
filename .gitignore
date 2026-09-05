@@ -219,6 +219,28 @@ mlruns/
 *.7z
 *.rar
 
+# Local tool state
+.fvm/flutter_sdk
+
+# Python static analysis
+.pyright/
+
+# AI experiment artifacts
+ai-training/outputs/
+ai-training/exports/
+ai-training/wandb/
+ai-training/mlruns/
+
+# Service secrets and local generated config
+service-server/src/main/resources/firebase*.json
+
+# Admin local env
+admin-web/.env.local
+
+# Flutter Firebase local platform files
+app/android/app/google-services.json
+app/ios/Runner/GoogleService-Info.plist
+
 *.mp4
 *.avi
 *.mov
