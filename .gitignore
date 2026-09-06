@@ -182,6 +182,7 @@ ai-training/datasets/splits/*
 # AI training outputs
 # ==================================================
 ai-training/runs/*
+!ai-training/runs/
 !ai-training/runs/.gitkeep
 
 ai-training/checkpoints/*
@@ -191,6 +192,8 @@ ai-server/models/*
 !ai-server/models/.gitkeep
 
 runs/
+!ai-training/runs/
+!ai-training/runs/.gitkeep
 wandb/
 mlruns/
 
@@ -226,6 +229,9 @@ mlruns/
 .pyright/
 
 # AI experiment artifacts
+ai-training/notebooks/*
+!ai-training/notebooks/.gitkeep
+
 ai-training/outputs/
 ai-training/exports/
 ai-training/wandb/
