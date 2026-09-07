@@ -1,0 +1,3 @@
+class AppError {
+  const AppError();
+}
