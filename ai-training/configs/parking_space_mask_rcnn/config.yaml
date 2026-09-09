@@ -1,0 +1,14 @@
+schemaVersion: 1
+model:
+  name: Mask R-CNN R50-FPN
+  role: parking_space_candidate_generation
+  source: null
+data:
+  splitVersion: null
+training:
+  seed: null
+  parameters: {}
+evaluation:
+  criteria: {}
+artifacts:
+  checkpoint: null

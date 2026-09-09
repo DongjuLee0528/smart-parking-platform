@@ -1,0 +1,3 @@
+class CurrentLocationController {
+  const CurrentLocationController();
+}

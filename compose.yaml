@@ -1,0 +1,58 @@
+services:
+  postgres:
+    image: postgis/postgis:17-3.5
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-smart_parking}
+      POSTGRES_USER: ${POSTGRES_USER:-smart_parking}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-smart_parking_dev_password}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - smart_parking_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  service-server:
+    build:
+      context: ./service-server
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-local}
+      SERVICE_DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-smart_parking}
+      SERVICE_DATABASE_USERNAME: ${POSTGRES_USER:-smart_parking}
+      SERVICE_DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-smart_parking_dev_password}
+      PUBLIC_DATA_PORTAL_API_KEY: ${PUBLIC_DATA_PORTAL_API_KEY:-replace-with-local-key}
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-replace-with-local-project-id}
+      FIREBASE_CREDENTIALS_PATH: ${FIREBASE_CREDENTIALS_PATH:-}
+    ports:
+      - "${SERVICE_SERVER_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  ai-server:
+    build:
+      context: ./ai-server
+    environment:
+      SPRING_INTERNAL_API_BASE_URL: http://service-server:8080/internal/v1
+      SPRING_INTERNAL_API_TOKEN: ${AI_SERVER_INTERNAL_TOKEN:-replace-with-local-internal-token}
+      MODEL_DIR: /models
+    ports:
+      - "${AI_SERVER_PORT:-8000}:8000"
+    depends_on:
+      service-server:
+        condition: service_started
+
+  admin-web:
+    build:
+      context: ./admin-web
+    ports:
+      - "5173:80"
+    depends_on:
+      service-server:
+        condition: service_started
+
+volumes:
+  smart_parking_postgres:

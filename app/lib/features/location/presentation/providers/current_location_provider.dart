@@ -1,0 +1,3 @@
+class CurrentLocationProvider {
+  const CurrentLocationProvider();
+}

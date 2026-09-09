@@ -1,0 +1,3 @@
+class AuthSession {
+  const AuthSession();
+}
