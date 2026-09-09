@@ -1,0 +1,3 @@
+class CurrentLocation {
+  const CurrentLocation();
+}

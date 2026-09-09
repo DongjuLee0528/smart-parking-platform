@@ -1,0 +1,3 @@
+class CurrentLocationRepositoryImpl {
+  const CurrentLocationRepositoryImpl();
+}
