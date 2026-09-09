@@ -1,0 +1,14 @@
+schemaVersion: 1
+model:
+  name: RT-DETRv2-L
+  role: vehicle_detection
+  source: null
+data:
+  splitVersion: null
+training:
+  seed: null
+  parameters: {}
+evaluation:
+  criteria: {}
+artifacts:
+  checkpoint: null
