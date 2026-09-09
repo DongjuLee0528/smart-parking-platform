@@ -1,0 +1,3 @@
+class AuthenticationRepositoryImpl {
+  const AuthenticationRepositoryImpl();
+}
