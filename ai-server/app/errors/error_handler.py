@@ -1,0 +1,2 @@
+class AiServerError(Exception):
+    pass
