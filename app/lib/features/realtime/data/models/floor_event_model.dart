@@ -1,0 +1,3 @@
+class FloorEventModel {
+  const FloorEventModel();
+}
