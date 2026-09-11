@@ -1,0 +1,3 @@
+class FloorSelectionProvider {
+  const FloorSelectionProvider();
+}
