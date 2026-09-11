@@ -1,0 +1,3 @@
+class FloorEventRepositoryImpl {
+  const FloorEventRepositoryImpl();
+}
