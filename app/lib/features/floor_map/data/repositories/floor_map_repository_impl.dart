@@ -1,0 +1,3 @@
+class FloorMapRepositoryImpl {
+  const FloorMapRepositoryImpl();
+}
