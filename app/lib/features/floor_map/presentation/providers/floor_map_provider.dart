@@ -1,0 +1,3 @@
+class FloorMapProvider {
+  const FloorMapProvider();
+}

@@ -1,0 +1,3 @@
+class FloorSelectionController {
+  const FloorSelectionController();
+}

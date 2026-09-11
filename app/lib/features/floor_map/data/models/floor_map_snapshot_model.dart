@@ -1,0 +1,3 @@
+class FloorMapSnapshotModel {
+  const FloorMapSnapshotModel();
+}
