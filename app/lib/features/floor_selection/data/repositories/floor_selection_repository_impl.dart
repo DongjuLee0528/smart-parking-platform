@@ -1,0 +1,3 @@
+class FloorSelectionRepositoryImpl {
+  const FloorSelectionRepositoryImpl();
+}
