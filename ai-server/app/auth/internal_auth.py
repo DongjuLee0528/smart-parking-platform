@@ -1,0 +1,2 @@
+class InternalAuthBoundary:
+    pass

@@ -1,0 +1,3 @@
+class GetCurrentLocation {
+  const GetCurrentLocation();
+}
