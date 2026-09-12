@@ -1,0 +1,2 @@
+class DatasetInventory:
+    pass
