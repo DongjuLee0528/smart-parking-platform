@@ -1,0 +1,3 @@
+class NotificationMessageModel {
+  const NotificationMessageModel();
+}
