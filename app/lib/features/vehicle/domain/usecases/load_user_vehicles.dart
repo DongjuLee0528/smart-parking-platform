@@ -1,0 +1,3 @@
+class LoadUserVehicles {
+  const LoadUserVehicles();
+}

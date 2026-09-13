@@ -1,0 +1,3 @@
+class LocationPermissionController {
+  const LocationPermissionController();
+}
