@@ -1,0 +1,3 @@
+class NotificationMessage {
+  const NotificationMessage();
+}

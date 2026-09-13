@@ -1,0 +1,3 @@
+class LoadParkingLotDetail {
+  const LoadParkingLotDetail();
+}

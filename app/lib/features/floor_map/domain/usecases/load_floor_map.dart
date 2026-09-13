@@ -1,0 +1,3 @@
+class LoadFloorMap {
+  const LoadFloorMap();
+}

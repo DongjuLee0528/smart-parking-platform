@@ -1,0 +1,3 @@
+class NotificationController {
+  const NotificationController();
+}
