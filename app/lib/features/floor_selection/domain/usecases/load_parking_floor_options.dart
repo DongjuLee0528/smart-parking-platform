@@ -1,0 +1,3 @@
+class LoadParkingFloorOptions {
+  const LoadParkingFloorOptions();
+}
