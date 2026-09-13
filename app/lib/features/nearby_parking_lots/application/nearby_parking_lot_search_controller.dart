@@ -1,0 +1,3 @@
+class NearbyParkingLotSearchController {
+  const NearbyParkingLotSearchController();
+}

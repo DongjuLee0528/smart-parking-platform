@@ -1,0 +1,3 @@
+class NearbyParkingLotModel {
+  const NearbyParkingLotModel();
+}

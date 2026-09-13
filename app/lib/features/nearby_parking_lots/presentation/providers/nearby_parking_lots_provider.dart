@@ -1,0 +1,3 @@
+class NearbyParkingLotsProvider {
+  const NearbyParkingLotsProvider();
+}

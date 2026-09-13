@@ -1,0 +1,3 @@
+class NearbyParkingLotsRepositoryImpl {
+  const NearbyParkingLotsRepositoryImpl();
+}
