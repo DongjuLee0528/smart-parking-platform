@@ -1,0 +1,3 @@
+class NotificationProvider {
+  const NotificationProvider();
+}
