@@ -1,0 +1,3 @@
+class NotificationRepositoryImpl {
+  const NotificationRepositoryImpl();
+}

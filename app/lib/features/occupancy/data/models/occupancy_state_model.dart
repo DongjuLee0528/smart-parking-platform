@@ -1,0 +1,3 @@
+class OccupancyStateModel {
+  const OccupancyStateModel();
+}

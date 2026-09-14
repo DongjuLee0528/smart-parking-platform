@@ -1,0 +1,3 @@
+class OccupancyProvider {
+  const OccupancyProvider();
+}

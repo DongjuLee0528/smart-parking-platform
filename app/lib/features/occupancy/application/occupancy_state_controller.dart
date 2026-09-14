@@ -1,0 +1,3 @@
+class OccupancyStateController {
+  const OccupancyStateController();
+}

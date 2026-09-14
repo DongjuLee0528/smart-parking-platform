@@ -1,0 +1,3 @@
+class OccupancyRepositoryImpl {
+  const OccupancyRepositoryImpl();
+}
