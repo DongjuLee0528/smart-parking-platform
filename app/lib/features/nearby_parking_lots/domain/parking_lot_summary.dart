@@ -1,0 +1,3 @@
+class ParkingLotSummary {
+  const ParkingLotSummary();
+}
