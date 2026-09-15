@@ -1,0 +1,3 @@
+class ParkingLotDetailProvider {
+  const ParkingLotDetailProvider();
+}

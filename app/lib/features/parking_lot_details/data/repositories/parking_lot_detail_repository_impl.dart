@@ -1,0 +1,3 @@
+class ParkingLotDetailRepositoryImpl {
+  const ParkingLotDetailRepositoryImpl();
+}
