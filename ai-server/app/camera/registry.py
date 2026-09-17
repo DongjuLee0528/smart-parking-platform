@@ -1,0 +1,2 @@
+class CameraRegistry:
+    pass
