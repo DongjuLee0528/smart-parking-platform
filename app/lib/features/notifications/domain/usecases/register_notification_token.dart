@@ -1,0 +1,3 @@
+class RegisterNotificationToken {
+  const RegisterNotificationToken();
+}

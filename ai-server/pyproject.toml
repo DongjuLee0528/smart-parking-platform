@@ -1,0 +1,41 @@
+[project]
+name = "smart-parking-ai-server"
+version = "0.1.0"
+description = "FastAPI inference boundary for the smart parking platform"
+requires-python = "==3.12.*"
+dependencies = [
+  "fastapi==0.141.1",
+  "uvicorn[standard]==0.52.4",
+  "pydantic-settings==2.15.0",
+  "httpx==0.28.1",
+  "numpy==2.2.6",
+  "opencv-python-headless==4.12.0.88",
+  "torch==2.7.0",
+  "torchvision==0.22.0",
+]
+
+[dependency-groups]
+dev = [
+  "pytest==9.1.1",
+  "ruff==0.16.6",
+  "mypy==2.3.1",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unused_configs = true

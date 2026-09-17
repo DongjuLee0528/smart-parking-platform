@@ -1,0 +1,7 @@
+name: smart-parking-production
+
+x-production-deployment-skeleton:
+  purpose: production deployment structure
+  sourceOfTruth: Notion deployment specification
+
+services: {}
