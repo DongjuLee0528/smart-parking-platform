@@ -1,0 +1,3 @@
+class SavedParkingLocationModel {
+  const SavedParkingLocationModel();
+}
