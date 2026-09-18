@@ -1,0 +1,3 @@
+class SavedParkingLocationProvider {
+  const SavedParkingLocationProvider();
+}

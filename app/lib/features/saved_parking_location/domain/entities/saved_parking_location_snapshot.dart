@@ -1,0 +1,3 @@
+class SavedParkingLocationSnapshot {
+  const SavedParkingLocationSnapshot();
+}
