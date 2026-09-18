@@ -1,0 +1,3 @@
+class RequestLocationPermission {
+  const RequestLocationPermission();
+}

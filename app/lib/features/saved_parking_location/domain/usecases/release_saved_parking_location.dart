@@ -1,0 +1,3 @@
+class ReleaseSavedParkingLocation {
+  const ReleaseSavedParkingLocation();
+}
