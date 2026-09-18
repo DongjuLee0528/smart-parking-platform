@@ -1,0 +1,3 @@
+class SavedParkingLocationRepositoryImpl {
+  const SavedParkingLocationRepositoryImpl();
+}
