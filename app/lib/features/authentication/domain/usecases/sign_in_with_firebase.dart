@@ -1,0 +1,3 @@
+class SignInWithFirebase {
+  const SignInWithFirebase();
+}

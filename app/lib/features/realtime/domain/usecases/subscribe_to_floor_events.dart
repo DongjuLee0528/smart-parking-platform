@@ -1,0 +1,3 @@
+class SubscribeToFloorEvents {
+  const SubscribeToFloorEvents();
+}

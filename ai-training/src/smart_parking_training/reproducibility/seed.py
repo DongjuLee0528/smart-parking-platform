@@ -1,0 +1,2 @@
+class SeedConfig:
+    pass

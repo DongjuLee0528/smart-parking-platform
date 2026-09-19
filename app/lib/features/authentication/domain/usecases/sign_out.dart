@@ -1,0 +1,3 @@
+class SignOut {
+  const SignOut();
+}
