@@ -1,0 +1,3 @@
+class VehicleProvider {
+  const VehicleProvider();
+}
