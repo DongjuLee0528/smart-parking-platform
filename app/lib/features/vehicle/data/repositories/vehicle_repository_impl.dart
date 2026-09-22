@@ -1,0 +1,3 @@
+class VehicleRepositoryImpl {
+  const VehicleRepositoryImpl();
+}
