@@ -7,3 +7,6 @@ spring:
       ddl-auto: validate
   flyway:
     clean-disabled: true
+
+firebase:
+  enabled: false

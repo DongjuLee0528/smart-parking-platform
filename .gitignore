@@ -312,3 +312,5 @@ AGENTS.md
 **/AGENTS.md
 AGENTS.local.md
 **/AGENTS.local.md
+.agent-notes/
+CLAUDE.md
