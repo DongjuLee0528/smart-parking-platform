@@ -3,6 +3,8 @@ from typing import Annotated
 
 import typer
 
+DATASET_ROOT_LABEL = "Dataset root"
+
 app = typer.Typer(no_args_is_help=True)
 
 
@@ -13,7 +15,7 @@ def require_path(path: Path, label: str) -> None:
 
 @app.command()
 def validate_dataset(dataset_root: Annotated[Path, typer.Option()]) -> None:
-    require_path(dataset_root, "Dataset root")
+    require_path(dataset_root, DATASET_ROOT_LABEL)
     typer.echo(f"Dataset root exists: {dataset_root}")
 
 
@@ -22,7 +24,7 @@ def split_dataset(
     dataset_root: Annotated[Path, typer.Option()],
     output_dir: Annotated[Path, typer.Option()],
 ) -> None:
-    require_path(dataset_root, "Dataset root")
+    require_path(dataset_root, DATASET_ROOT_LABEL)
     raise typer.BadParameter(f"Split configuration is required before writing {output_dir}")
 
 
@@ -63,5 +65,5 @@ def evaluate_mask_rcnn(
     dataset_root: Annotated[Path, typer.Option()],
 ) -> None:
     require_path(checkpoint, "Mask R-CNN checkpoint")
-    require_path(dataset_root, "Dataset root")
+    require_path(dataset_root, DATASET_ROOT_LABEL)
     raise typer.BadParameter("Evaluation config is required before running Mask R-CNN evaluation")
