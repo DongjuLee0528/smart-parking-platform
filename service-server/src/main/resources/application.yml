@@ -33,3 +33,8 @@ management:
 springdoc:
   api-docs:
     path: /v3/api-docs
+
+firebase:
+  enabled: ${FIREBASE_ENABLED:true}
+  project-id: ${FIREBASE_PROJECT_ID:}
+  credentials-path: ${FIREBASE_CREDENTIALS_PATH:}
