@@ -314,3 +314,7 @@ AGENTS.local.md
 **/AGENTS.local.md
 .agent-notes/
 CLAUDE.md
+
+# Graphify code knowledge graph (local cache, regenerate with `graphify update`)
+graphify-out/
+.graphify/

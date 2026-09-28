@@ -18,7 +18,7 @@ require the internal user's ADMIN role. Responses wrap resource data in `data`.
 Lists accept `page` (default 0), `size` (default 20, maximum 100), and
 `sort` (`name,asc` or `name,desc`). The response contains `items`, `page`,
 `size`, and `totalElements`. UUID ordering breaks equal-name ties.
-This basic list is not the separately specified PostGIS nearby-search API.
+This basic list is not the separately specified nearby-search API.
 
 ## Creation
 
@@ -64,10 +64,13 @@ Errors use `code`, `message`, `traceId`, and `details`:
 ## Verification and follow-up
 
 The focused service and MVC tests use repository and token-verifier doubles,
-not a production authentication bypass. They require no Docker or database.
-Production persistence requires PostgreSQL/PostGIS and Flyway migrations V1-V3.
-Real migrations, spatial persistence and concurrent database transactions must
-also be verified against PostgreSQL/PostGIS before deployment; mocks do not prove them.
+not a production authentication bypass. The application context and parking-lot
+persistence tests use H2 in MySQL mode with Flyway migrations V1-V2; no Docker is
+required. Production persistence uses MySQL, with phpMyAdmin only as a management
+GUI. H2 does not prove MySQL compatibility: migrations, coordinate persistence,
+constraints and concurrent transactions still require verification on real MySQL
+before deployment. The PostgreSQL/PostGIS schema is not an automatic data migration;
+existing PostgreSQL data needs a separately planned transfer.
 
 External provider integration and automatic collection are intentionally absent.
 After selecting a provider, determine authentication, pagination, normalization,

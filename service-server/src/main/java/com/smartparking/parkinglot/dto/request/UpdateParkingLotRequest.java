@@ -1,4 +1,13 @@
 package com.smartparking.parkinglot.dto.request;
 
-public record UpdateParkingLotRequest() {
-}
+import jakarta.validation.constraints.*;
+
+public record UpdateParkingLotRequest(
+    @NotNull @PositiveOrZero Long version,
+    @NotBlank @Size(max = 200) String name,
+    @NotBlank @Size(max = 500) String address,
+    @NotNull @DecimalMin("-90") @DecimalMax("90") Double latitude,
+    @NotNull @DecimalMin("-180") @DecimalMax("180") Double longitude,
+    @NotNull @Size(max = 2000) String operatingHours,
+    @NotNull @Size(max = 2000) String feeInformation
+) {}

@@ -1,4 +1,7 @@
 package com.smartparking.audit.infrastructure;
 
-public interface AuditLogRepository {
-}
+import com.smartparking.audit.domain.AuditLog;
+import java.util.UUID;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface AuditLogRepository extends JpaRepository<AuditLog, UUID> {}
