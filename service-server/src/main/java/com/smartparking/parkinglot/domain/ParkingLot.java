@@ -9,9 +9,6 @@ import java.util.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.AccessLevel;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
-import org.locationtech.jts.geom.*;
 
 @Entity
 @Table(name = "parking_lots")
@@ -24,9 +21,10 @@ public class ParkingLot {
     private String name;
     @Column(nullable = false, length = 500)
     private String address;
-    @JdbcTypeCode(SqlTypes.GEOGRAPHY)
-    @Column(nullable = false, columnDefinition = "geography(Point,4326)")
-    private Point location;
+    @Column(nullable = false)
+    private double latitude;
+    @Column(nullable = false)
+    private double longitude;
     @Column(name = "operating_hours", nullable = false, length = 2000)
     private String operatingHours;
     @Column(name = "fee_information", nullable = false, length = 2000)
@@ -61,8 +59,8 @@ public class ParkingLot {
                             String operatingHours, String feeInformation) {
         this.name = name.strip();
         this.address = address.strip();
-        this.location = new GeometryFactory(new PrecisionModel(), 4326)
-            .createPoint(new Coordinate(longitude, latitude));
+        this.latitude = latitude;
+        this.longitude = longitude;
         this.operatingHours = operatingHours;
         this.feeInformation = feeInformation;
         this.updatedAt = Instant.now();
