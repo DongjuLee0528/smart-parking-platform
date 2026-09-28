@@ -2,15 +2,17 @@ spring:
   application:
     name: smart-parking-service
   datasource:
-    url: ${SERVICE_DATABASE_URL:jdbc:postgresql://localhost:5432/smart_parking}
+    url: ${SERVICE_DATABASE_URL:jdbc:mysql://localhost:3306/smart_parking}
     username: ${SERVICE_DATABASE_USERNAME:smart_parking}
-    password: ${SERVICE_DATABASE_PASSWORD:smart_parking_dev_password}
+    password: ${SERVICE_DATABASE_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: validate
     open-in-view: false
     properties:
       hibernate:
+        type:
+          preferred_uuid_jdbc_type: BINARY
         jdbc:
           time_zone: UTC
   flyway:
