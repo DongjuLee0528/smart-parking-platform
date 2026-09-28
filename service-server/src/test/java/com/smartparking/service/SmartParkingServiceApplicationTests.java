@@ -2,40 +2,51 @@ package com.smartparking.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.smartparking.parkinglot.domain.ParkingLot;
+import com.smartparking.parkinglot.dto.request.CreateParkingLotRequest;
+import com.smartparking.parkinglot.dto.response.ParkingLotDetailResponse;
+import com.smartparking.parkinglot.infrastructure.ParkingLotRepository;
+import jakarta.persistence.EntityManager;
+import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
+import org.springframework.transaction.annotation.Transactional;
 import com.smartparking.global.security.FirebaseTokenVerifier;
 
 @SpringBootTest
 @ActiveProfiles("test")
-@Testcontainers(disabledWithoutDocker = true)
 class SmartParkingServiceApplicationTests {
 
     @MockitoBean
     FirebaseTokenVerifier firebaseTokenVerifier;
 
-    @Container
-    static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgis/postgis:17-3.5")
-        .withDatabaseName("smart_parking_test")
-        .withUsername("smart_parking")
-        .withPassword("smart_parking_dev_password");
+    @Autowired
+    ParkingLotRepository parkingLotRepository;
 
-    @DynamicPropertySource
-    static void databaseProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
-    }
+    @Autowired
+    EntityManager entityManager;
 
     @Test
     void contextLoads() {
-        assertThat(postgres.isRunning()).isTrue();
+        assertThat(firebaseTokenVerifier).isNotNull();
+    }
+
+    @Test
+    @Transactional
+    void parkingLotCoordinatesAndFloorsRoundTripThroughH2() {
+        var request = new CreateParkingLotRequest("Lot", "Address", 37.5, 127.0, "", "",
+            List.of(new CreateParkingLotRequest.Floor("B1", -1, List.of("A"))));
+        var saved = parkingLotRepository.saveAndFlush(new ParkingLot(request));
+        var id = saved.getId();
+        entityManager.clear();
+
+        var result = ParkingLotDetailResponse.from(parkingLotRepository.findById(id).orElseThrow());
+        assertThat(result.latitude()).isEqualTo(37.5);
+        assertThat(result.longitude()).isEqualTo(127.0);
+        assertThat(result.floors()).hasSize(1);
+        assertThat(result.floors().get(0).zones()).hasSize(1);
     }
 }

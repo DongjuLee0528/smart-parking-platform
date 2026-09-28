@@ -13,7 +13,7 @@ public record ParkingLotDetailResponse(
 
     public static ParkingLotDetailResponse from(ParkingLot lot) {
         return new ParkingLotDetailResponse(lot.getId(), lot.getName(), lot.getAddress(),
-            lot.getLocation().getY(), lot.getLocation().getX(), lot.getOperatingHours(),
+            lot.getLatitude(), lot.getLongitude(), lot.getOperatingHours(),
             lot.getFeeInformation(), lot.getOperationStatus(), lot.getSetupStatus(), lot.getVersion(),
             lot.getFloors().stream().map(floor -> new Floor(floor.getId(), floor.getName(),
                 floor.getFloorOrder(), floor.getZones().stream()
