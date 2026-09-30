@@ -28,9 +28,14 @@ public class AuditLog {
     private Instant createdAt;
 
     public AuditLog(UUID actorId, String action, UUID entityId, String beforeJson, String afterJson) {
+        this(actorId, "PARKING_LOT", action, entityId, beforeJson, afterJson);
+    }
+
+    public AuditLog(UUID actorId, String entityType, String action, UUID entityId,
+                    String beforeJson, String afterJson) {
         this.actorId = actorId;
         this.action = action;
-        this.entityType = "PARKING_LOT";
+        this.entityType = entityType;
         this.entityId = entityId;
         this.beforeJson = beforeJson;
         this.afterJson = afterJson;
