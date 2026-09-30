@@ -20,6 +20,8 @@ public class ParkingFloor {
     private String name;
     @Column(name = "floor_order", nullable = false)
     private int floorOrder;
+    @Column(name = "spaces_version", nullable = false)
+    private Long spacesVersion = 0L;
     @OneToMany(mappedBy = "floor", cascade = CascadeType.PERSIST)
     @OrderBy("name ASC")
     private List<ParkingZone> zones = new ArrayList<>();
