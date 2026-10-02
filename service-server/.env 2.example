@@ -1,8 +1,0 @@
-# Development-only example values. Do not use production credentials here.
-SERVICE_DATABASE_URL=jdbc:mysql://localhost:3306/smart_parking
-SERVICE_DATABASE_USERNAME=smart_parking
-SERVICE_DATABASE_PASSWORD=replace-with-local-password
-PUBLIC_DATA_PORTAL_API_KEY=replace-with-local-key
-FIREBASE_PROJECT_ID=replace-with-local-project-id
-FIREBASE_CREDENTIALS_PATH=replace-with-local-firebase-admin-json-path
-AI_INTERNAL_TOKEN=replace-with-local-internal-token
