@@ -76,6 +76,7 @@ public class FirebaseAuthenticationFilter extends OncePerRequestFilter {
         return path.startsWith("/actuator/health")
             || path.equals("/actuator/info")
             || path.startsWith("/v3/api-docs")
-            || path.startsWith("/scalar");
+            || path.startsWith("/scalar")
+            || (request.getMethod().equals("POST") && path.equals("/internal/v1/occupancy-results"));
     }
 }
