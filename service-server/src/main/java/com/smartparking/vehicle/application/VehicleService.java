@@ -1,6 +1,7 @@
 package com.smartparking.vehicle.application;
 
 import com.smartparking.global.error.ErrorCode;
+import com.smartparking.savedparkinglocation.infrastructure.SavedParkingLocationRepository;
 import com.smartparking.user.domain.User;
 import com.smartparking.vehicle.domain.Vehicle;
 import com.smartparking.vehicle.dto.request.CreateVehicleRequest;
@@ -10,6 +11,7 @@ import com.smartparking.vehicle.dto.response.VehicleResponse;
 import com.smartparking.vehicle.infrastructure.VehicleRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
+import java.time.Instant;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -24,10 +26,13 @@ import org.springframework.transaction.annotation.Transactional;
 public class VehicleService {
     private static final Pattern PLATE = Pattern.compile("^(?:[가-힣]{2})?[0-9]{2,3}[가-힣][0-9]{4}$");
     private final VehicleRepository repository;
+    private final SavedParkingLocationRepository savedLocations;
     private final EntityManager entityManager;
 
-    public VehicleService(VehicleRepository repository, EntityManager entityManager) {
+    public VehicleService(VehicleRepository repository, SavedParkingLocationRepository savedLocations,
+                          EntityManager entityManager) {
         this.repository = repository;
+        this.savedLocations = savedLocations;
         this.entityManager = entityManager;
     }
 
@@ -82,6 +87,7 @@ public class VehicleService {
         lockUser(userId);
         var vehicle = requireOwned(userId, vehicleId);
         checkVersion(vehicle, version);
+        savedLocations.detachVehicle(userId, vehicleId, Instant.now());
         repository.delete(vehicle);
         repository.flush();
     }
