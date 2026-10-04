@@ -1,4 +1,11 @@
 package com.smartparking.savedparkinglocation.dto.request;
 
-public record SaveParkingLocationRequest() {
+import jakarta.validation.constraints.NotNull;
+import java.util.UUID;
+
+public record SaveParkingLocationRequest(
+    @NotNull UUID vehicleId,
+    @NotNull UUID parkingSpaceId,
+    Boolean confirm
+) {
 }
