@@ -21,7 +21,7 @@ public class SavedParkingLocation {
     private UUID id;
     @Column(name = "user_id", nullable = false, updatable = false)
     private UUID userId;
-    @Column(name = "vehicle_id", nullable = false, updatable = false)
+    @Column(name = "vehicle_id")
     private UUID vehicleId;
     @Column(name = "parking_space_id", nullable = false, updatable = false)
     private UUID parkingSpaceId;

@@ -32,6 +32,7 @@ import com.smartparking.user.domain.UserStatus;
 import com.smartparking.user.infrastructure.UserRepository;
 import com.smartparking.vehicle.domain.Vehicle;
 import com.smartparking.vehicle.infrastructure.VehicleRepository;
+import jakarta.persistence.EntityManager;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -62,6 +63,7 @@ class SavedParkingLocationControllerTest {
     @Autowired CameraRepository cameras;
     @Autowired OccupancyCurrentRepository occupancy;
     @Autowired SavedParkingLocationRepository locations;
+    @Autowired EntityManager entityManager;
     MockMvc mvc;
     UUID vehicleA;
     UUID secondVehicleA;
@@ -105,7 +107,7 @@ class SavedParkingLocationControllerTest {
         assertThat(locations.findById(UUID.fromString(firstId)).orElseThrow().getReleasedAt()).isNotNull();
         mvc.perform(get(PATH + "/active").header("Authorization", "Bearer token-a"))
             .andExpect(status().isOk()).andExpect(jsonPath("$.data.id").value(secondId))
-            .andExpect(jsonPath("$.data.snapshot.plateNumber").value("56다7890"));
+            .andExpect(jsonPath("$.data.snapshot.plateNumber").doesNotExist());
         mvc.perform(delete(PATH + "/{id}", secondId).header("Authorization", "Bearer token-a"))
             .andExpect(status().isNoContent());
         var releasedAt = locations.findById(UUID.fromString(secondId)).orElseThrow().getReleasedAt();
@@ -162,6 +164,40 @@ class SavedParkingLocationControllerTest {
             .andExpect(jsonPath("$.code").value("AUTH_TOKEN_INVALID"));
         mvc.perform(get(PATH + "/active").header("Authorization", "Bearer invalid"))
             .andExpect(status().isUnauthorized()).andExpect(jsonPath("$.traceId").isString());
+    }
+
+    @Test
+    void deletingVehicleReleasesActiveLocationAndPreservesLocationHistoryWithoutVehicleData() throws Exception {
+        var first = save("token-a", vehicleA, spaceId, false).andExpect(status().isCreated()).andReturn();
+        var firstId = UUID.fromString(data(first.getResponse().getContentAsString()).get("id").asText());
+        var second = save("token-a", secondVehicleA, spaceId, true)
+            .andExpect(status().isCreated()).andReturn();
+        var secondId = UUID.fromString(data(second.getResponse().getContentAsString()).get("id").asText());
+        var firstReleasedAt = locations.findById(firstId).orElseThrow().getReleasedAt();
+
+        mvc.perform(delete("/api/v1/vehicles/{id}?version=0", vehicleA)
+                .header("Authorization", "Bearer token-a"))
+            .andExpect(status().isNoContent());
+        entityManager.clear();
+        var former = locations.findById(firstId).orElseThrow();
+        assertThat(former.getVehicleId()).isNull();
+        assertThat(former.getReleasedAt()).isEqualTo(firstReleasedAt);
+        assertThat(former.getSnapshotJson()).contains("Original Lot").doesNotContain("12가3456");
+        mvc.perform(get(PATH + "/active").header("Authorization", "Bearer token-a"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.data.vehicleId")
+                .value(secondVehicleA.toString()));
+
+        mvc.perform(delete("/api/v1/vehicles/{id}?version=0", secondVehicleA)
+                .header("Authorization", "Bearer token-a"))
+            .andExpect(status().isNoContent());
+        entityManager.clear();
+        var latest = locations.findById(secondId).orElseThrow();
+        assertThat(latest.getVehicleId()).isNull();
+        assertThat(latest.getReleasedAt()).isNotNull();
+        assertThat(latest.getSnapshotJson()).contains("Original Lot").doesNotContain("56다7890");
+        mvc.perform(get(PATH + "/active").header("Authorization", "Bearer token-a"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.data").value((Object) null));
+        assertThat(vehicles.findById(vehicleB)).isPresent();
     }
 
     private org.springframework.test.web.servlet.ResultActions save(String token, UUID vehicleId,
