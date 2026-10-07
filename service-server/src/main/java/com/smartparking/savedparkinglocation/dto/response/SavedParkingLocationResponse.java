@@ -16,7 +16,7 @@ public record SavedParkingLocationResponse(
         UUID parkingLotId, String parkingLotName,
         UUID floorId, String floorName,
         UUID zoneId, String zoneName,
-        String spaceNumber,
+        String spaceNumber, String plateNumber,
         OccupancyState occupancyState
     ) {
     }
