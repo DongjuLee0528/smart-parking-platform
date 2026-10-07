@@ -45,4 +45,11 @@ public class SavedParkingLocation {
             releasedAt = Instant.now();
         }
     }
+
+    public void detachVehicle(Instant releasedAt) {
+        vehicleId = null;
+        if (this.releasedAt == null) {
+            this.releasedAt = releasedAt;
+        }
+    }
 }
