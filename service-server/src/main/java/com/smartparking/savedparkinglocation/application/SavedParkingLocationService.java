@@ -66,7 +66,7 @@ public class SavedParkingLocationService {
         var floor = zone.getFloor();
         var lot = floor.getParkingLot();
         var snapshot = new Snapshot(lot.getId(), lot.getName(), floor.getId(), floor.getName(),
-            zone.getId(), zone.getName(), space.getSpaceNumber(), state);
+            zone.getId(), zone.getName(), space.getSpaceNumber(), null, state);
         active.ifPresent(SavedParkingLocation::release);
         var location = locations.saveAndFlush(new SavedParkingLocation(userId, vehicle.getId(),
             space.getId(), json(snapshot)));
