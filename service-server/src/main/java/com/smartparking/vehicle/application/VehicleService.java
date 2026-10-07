@@ -87,7 +87,9 @@ public class VehicleService {
         lockUser(userId);
         var vehicle = requireOwned(userId, vehicleId);
         checkVersion(vehicle, version);
-        savedLocations.detachVehicle(userId, vehicleId, Instant.now());
+        var releasedAt = Instant.now();
+        savedLocations.findAllByUserIdAndVehicleId(userId, vehicleId)
+            .forEach(location -> location.detachVehicle(releasedAt));
         repository.delete(vehicle);
         repository.flush();
     }

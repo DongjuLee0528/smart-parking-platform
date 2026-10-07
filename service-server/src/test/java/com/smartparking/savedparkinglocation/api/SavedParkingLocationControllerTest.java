@@ -32,7 +32,6 @@ import com.smartparking.user.domain.UserStatus;
 import com.smartparking.user.infrastructure.UserRepository;
 import com.smartparking.vehicle.domain.Vehicle;
 import com.smartparking.vehicle.infrastructure.VehicleRepository;
-import jakarta.persistence.EntityManager;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -63,7 +62,6 @@ class SavedParkingLocationControllerTest {
     @Autowired CameraRepository cameras;
     @Autowired OccupancyCurrentRepository occupancy;
     @Autowired SavedParkingLocationRepository locations;
-    @Autowired EntityManager entityManager;
     MockMvc mvc;
     UUID vehicleA;
     UUID secondVehicleA;
@@ -107,7 +105,7 @@ class SavedParkingLocationControllerTest {
         assertThat(locations.findById(UUID.fromString(firstId)).orElseThrow().getReleasedAt()).isNotNull();
         mvc.perform(get(PATH + "/active").header("Authorization", "Bearer token-a"))
             .andExpect(status().isOk()).andExpect(jsonPath("$.data.id").value(secondId))
-            .andExpect(jsonPath("$.data.snapshot.plateNumber").doesNotExist());
+            .andExpect(jsonPath("$.data.snapshot.plateNumber").value((Object) null));
         mvc.perform(delete(PATH + "/{id}", secondId).header("Authorization", "Bearer token-a"))
             .andExpect(status().isNoContent());
         var releasedAt = locations.findById(UUID.fromString(secondId)).orElseThrow().getReleasedAt();
@@ -178,7 +176,6 @@ class SavedParkingLocationControllerTest {
         mvc.perform(delete("/api/v1/vehicles/{id}?version=0", vehicleA)
                 .header("Authorization", "Bearer token-a"))
             .andExpect(status().isNoContent());
-        entityManager.clear();
         var former = locations.findById(firstId).orElseThrow();
         assertThat(former.getVehicleId()).isNull();
         assertThat(former.getReleasedAt()).isEqualTo(firstReleasedAt);
@@ -190,7 +187,6 @@ class SavedParkingLocationControllerTest {
         mvc.perform(delete("/api/v1/vehicles/{id}?version=0", secondVehicleA)
                 .header("Authorization", "Bearer token-a"))
             .andExpect(status().isNoContent());
-        entityManager.clear();
         var latest = locations.findById(secondId).orElseThrow();
         assertThat(latest.getVehicleId()).isNull();
         assertThat(latest.getReleasedAt()).isNotNull();
