@@ -7,13 +7,19 @@ import com.smartparking.occupancy.domain.OccupancyHistory;
 import com.smartparking.occupancy.domain.OccupancyIngestEvent;
 import com.smartparking.occupancy.domain.OccupancyState;
 import com.smartparking.occupancy.dto.request.AiOccupancyResultRequest;
+import com.smartparking.occupancy.dto.response.OccupancyStateResponse;
 import com.smartparking.occupancy.infrastructure.OccupancyCurrentRepository;
 import com.smartparking.occupancy.infrastructure.OccupancyHistoryRepository;
+import com.smartparking.parkingfloor.infrastructure.ParkingFloorRepository;
+import com.smartparking.parkingspace.domain.ParkingSpace;
 import com.smartparking.parkingspace.infrastructure.ParkingSpaceRepository;
 import jakarta.persistence.EntityManager;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.List;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,19 +27,43 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class OccupancyService {
     private final CameraRepository cameras;
+    private final ParkingFloorRepository floors;
     private final ParkingSpaceRepository spaces;
     private final OccupancyCurrentRepository current;
     private final OccupancyHistoryRepository history;
     private final EntityManager entityManager;
 
-    public OccupancyService(CameraRepository cameras, ParkingSpaceRepository spaces,
+    public OccupancyService(CameraRepository cameras, ParkingFloorRepository floors, ParkingSpaceRepository spaces,
                             OccupancyCurrentRepository current, OccupancyHistoryRepository history,
                             EntityManager entityManager) {
         this.cameras = cameras;
+        this.floors = floors;
         this.spaces = spaces;
         this.current = current;
         this.history = history;
         this.entityManager = entityManager;
+    }
+
+    @Transactional(readOnly = true)
+    public List<OccupancyStateResponse> floorSnapshot(UUID floorId) {
+        if (!floors.existsById(floorId)) {
+            throw new OccupancyException(ErrorCode.PARKING_FLOOR_NOT_FOUND, "Parking floor not found");
+        }
+        var floorSpaces = spaces.findByZoneFloorIdOrderBySpaceNumberAsc(floorId);
+        var activeIds = floorSpaces.stream().filter(ParkingSpace::isActive).map(ParkingSpace::getId).toList();
+        var latest = current.findAllById(activeIds).stream().collect(Collectors.toMap(
+            OccupancyCurrent::getParkingSpaceId, Function.identity()));
+        return floorSpaces.stream()
+            .sorted(Comparator.comparing((ParkingSpace space) -> space.getZone().getName())
+                .thenComparing(ParkingSpace::getSpaceNumber).thenComparing(ParkingSpace::getId))
+            .map(space -> {
+                var observation = latest.get(space.getId());
+                return new OccupancyStateResponse(space.getId(), space.getZone().getId(),
+                    space.getSpaceNumber(), space.isActive(),
+                    observation == null ? OccupancyState.UNKNOWN : observation.getState(),
+                    observation == null ? null : observation.getConfidence(),
+                    observation == null ? null : observation.getObservedAt());
+            }).toList();
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
