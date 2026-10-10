@@ -21,6 +21,7 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,16 +33,18 @@ public class OccupancyService {
     private final OccupancyCurrentRepository current;
     private final OccupancyHistoryRepository history;
     private final EntityManager entityManager;
+    private final ApplicationEventPublisher events;
 
     public OccupancyService(CameraRepository cameras, ParkingFloorRepository floors, ParkingSpaceRepository spaces,
                             OccupancyCurrentRepository current, OccupancyHistoryRepository history,
-                            EntityManager entityManager) {
+                            EntityManager entityManager, ApplicationEventPublisher events) {
         this.cameras = cameras;
         this.floors = floors;
         this.spaces = spaces;
         this.current = current;
         this.history = history;
         this.entityManager = entityManager;
+        this.events = events;
     }
 
     @Transactional(readOnly = true)
@@ -108,6 +111,10 @@ public class OccupancyService {
             if (priorState != result.state()) {
                 history.save(new OccupancyHistory(space.getId(), priorState, result.state(),
                     result.confidence(), request.capturedAt()));
+                events.publishEvent(new OccupancyChangedEvent(space.getZone().getFloor().getId(),
+                    new OccupancyStateResponse(space.getId(), space.getZone().getId(),
+                        space.getSpaceNumber(), space.isActive(), result.state(), result.confidence(),
+                        request.capturedAt())));
             }
         }
         entityManager.persist(new OccupancyIngestEvent(request.eventId(), request.cameraId(), request.capturedAt()));
