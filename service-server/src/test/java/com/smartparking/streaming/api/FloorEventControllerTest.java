@@ -147,13 +147,13 @@ class FloorEventControllerTest {
         var zone = lot.getFloors().get(0).getZones().get(0);
         var camera = cameras.saveAndFlush(new Camera(zone, "Camera", "CAMERA_" + floorName));
         var space = spaces.saveAndFlush(new ParkingSpace(zone, "A-01", ParkingSpaceType.GENERAL,
-            "[]", true, List.of(new CameraSpaceMapping(camera.getId(), "[]", 1, 1))));
+            "[]", true, List.of(new CameraSpaceMapping(camera.getId(), "[]", 1, 0))));
         return new Fixture(lot.getFloors().get(0).getId(), camera.getId(), space.getId());
     }
 
     private AiOccupancyResultRequest result(Fixture fixture, UUID eventId, Instant capturedAt,
                                             OccupancyState state) {
-        return new AiOccupancyResultRequest(eventId, fixture.cameraId(), 1L,
+        return new AiOccupancyResultRequest(eventId, fixture.cameraId(), 0L,
             new AiOccupancyResultRequest.Model("model", "1", "checksum"), capturedAt,
             capturedAt.plusMillis(200), CameraStatus.ONLINE,
             List.of(new AiOccupancyResultRequest.Space(fixture.spaceId(), state, 0.9, null)));
