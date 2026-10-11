@@ -8,6 +8,7 @@ import com.smartparking.occupancy.domain.OccupancyIngestEvent;
 import com.smartparking.occupancy.domain.OccupancyState;
 import com.smartparking.occupancy.dto.request.AiOccupancyResultRequest;
 import com.smartparking.occupancy.dto.response.OccupancyStateResponse;
+import com.smartparking.occupancy.dto.response.FloorAvailabilityResponse;
 import com.smartparking.occupancy.infrastructure.OccupancyCurrentRepository;
 import com.smartparking.occupancy.infrastructure.OccupancyHistoryRepository;
 import com.smartparking.parkingfloor.infrastructure.ParkingFloorRepository;
@@ -69,12 +70,20 @@ public class OccupancyService {
             }).toList();
     }
 
+    @Transactional(readOnly = true)
+    public FloorAvailabilityResponse floorAvailability(UUID floorId) {
+        if (!floors.existsById(floorId)) {
+            throw new OccupancyException(ErrorCode.PARKING_FLOOR_NOT_FOUND, "Parking floor not found");
+        }
+        return new FloorAvailabilityResponse(floorId, current.countAvailableByFloorId(floorId));
+    }
+
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public void ingest(AiOccupancyResultRequest request) {
         if (request.capturedAt().isAfter(request.processedAt())) {
             throw new OccupancyException(ErrorCode.VALIDATION_FAILED, "Captured time is after processed time");
         }
-        cameras.findById(request.cameraId()).orElseThrow(() ->
+        var camera = cameras.findById(request.cameraId()).orElseThrow(() ->
             new OccupancyException(ErrorCode.CAMERA_NOT_FOUND, "Camera not found"));
         var existingEvent = entityManager.find(OccupancyIngestEvent.class, request.eventId());
         if (existingEvent != null) {
@@ -82,6 +91,9 @@ public class OccupancyService {
                 throw new OccupancyException(ErrorCode.VERSION_CONFLICT, "Event ID belongs to another camera");
             }
             return;
+        }
+        if (!camera.getConfigVersion().equals(request.configVersion())) {
+            throw new OccupancyException(ErrorCode.VERSION_CONFLICT, "Camera configuration version has changed");
         }
         var seenSpaces = new HashSet<UUID>();
         for (var result : request.spaces().stream()
@@ -119,5 +131,7 @@ public class OccupancyService {
         }
         entityManager.persist(new OccupancyIngestEvent(request.eventId(), request.cameraId(), request.capturedAt()));
         entityManager.flush();
+        cameras.updateObservedStatus(request.cameraId(), request.configVersion(),
+            request.cameraStatus().name(), request.capturedAt());
     }
 }
