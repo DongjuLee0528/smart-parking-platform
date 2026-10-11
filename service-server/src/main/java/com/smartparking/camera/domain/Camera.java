@@ -25,6 +25,8 @@ public class Camera {
     private CameraStatus status = CameraStatus.OFFLINE;
     @Column(name = "last_frame_at")
     private Instant lastFrameAt;
+    @Column(name = "status_observed_at")
+    private Instant statusObservedAt;
     @Version @Column(name = "config_version", nullable = false)
     private Long configVersion;
 
@@ -38,5 +40,6 @@ public class Camera {
         this.streamKeyRef = streamKeyRef;
         this.status = CameraStatus.OFFLINE;
         this.lastFrameAt = null;
+        this.statusObservedAt = null;
     }
 }
