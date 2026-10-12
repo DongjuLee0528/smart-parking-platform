@@ -125,13 +125,13 @@ class InternalOccupancyControllerTest {
         var fixture = fixture();
         submit(result(UUID.randomUUID(), fixture.cameraId(), fixture.spaceId(), 0,
             FIRST, OccupancyState.OCCUPIED, 0.94), "Bearer test-internal-only")
-            .andExpect(status().isUnprocessableEntity());
+            .andExpect(status().isConflict());
         submit(result(UUID.randomUUID(), UUID.randomUUID(), fixture.spaceId(), 1,
             FIRST, OccupancyState.OCCUPIED, 0.94), "Bearer test-internal-only")
             .andExpect(status().isNotFound()).andExpect(jsonPath("$.code").value("CAMERA_NOT_FOUND"));
         var otherCamera = cameras.saveAndFlush(new Camera(spaces.findById(fixture.spaceId()).orElseThrow().getZone(),
             "Unmapped", "CAMERA_UNMAPPED_RTSP"));
-        submit(result(UUID.randomUUID(), otherCamera.getId(), fixture.spaceId(), 1,
+        submit(result(UUID.randomUUID(), otherCamera.getId(), fixture.spaceId(), 0,
             FIRST, OccupancyState.OCCUPIED, 0.94), "Bearer test-internal-only")
             .andExpect(status().isUnprocessableEntity());
         submit(result(UUID.randomUUID(), fixture.cameraId(), UUID.randomUUID(), 1,
@@ -149,6 +149,36 @@ class InternalOccupancyControllerTest {
             .andExpect(status().isUnprocessableEntity())
             .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
         assertThat(current.findAll()).isEmpty();
+    }
+
+    @Test
+    @Transactional
+    void appliesOnlyNewerCameraStatusWithoutChangingConfigurationVersion() throws Exception {
+        var fixture = fixture();
+        submit(result(UUID.randomUUID(), fixture.cameraId(), fixture.spaceId(), 1,
+            FIRST, OccupancyState.EMPTY, 0.95), "Bearer test-internal-only")
+            .andExpect(status().isNoContent());
+        entityManager.clear();
+        var camera = cameras.findById(fixture.cameraId()).orElseThrow();
+        assertThat(camera.getStatus()).isEqualTo(CameraStatus.ONLINE);
+        assertThat(camera.getLastFrameAt()).isEqualTo(FIRST);
+        assertThat(camera.getConfigVersion()).isEqualTo(1);
+
+        var offline = result(UUID.randomUUID(), fixture.cameraId(), fixture.spaceId(), 1,
+            FIRST.plusSeconds(10), OccupancyState.UNKNOWN, 0.7);
+        submit(new AiOccupancyResultRequest(offline.eventId(), offline.cameraId(), offline.configVersion(),
+            offline.model(), offline.capturedAt(), offline.processedAt(), CameraStatus.OFFLINE, offline.spaces()),
+            "Bearer test-internal-only").andExpect(status().isNoContent());
+        entityManager.clear();
+        camera = cameras.findById(fixture.cameraId()).orElseThrow();
+        assertThat(camera.getStatus()).isEqualTo(CameraStatus.OFFLINE);
+        assertThat(camera.getLastFrameAt()).isEqualTo(FIRST);
+
+        submit(result(UUID.randomUUID(), fixture.cameraId(), fixture.spaceId(), 1,
+            FIRST.plusSeconds(5), OccupancyState.EMPTY, 0.95), "Bearer test-internal-only")
+            .andExpect(status().isNoContent());
+        entityManager.clear();
+        assertThat(cameras.findById(fixture.cameraId()).orElseThrow().getStatus()).isEqualTo(CameraStatus.OFFLINE);
     }
 
     private ResultActions submit(AiOccupancyResultRequest request, String authorization) throws Exception {
@@ -173,6 +203,8 @@ class InternalOccupancyControllerTest {
             "", "", List.of(new CreateParkingLotRequest.Floor("B1", -1, List.of("A"))))));
         var zone = lot.getFloors().get(0).getZones().get(0);
         var camera = cameras.saveAndFlush(new Camera(zone, "Entrance", "CAMERA_ENTRANCE_RTSP"));
+        camera.configure(zone, "Entrance configured", "CAMERA_ENTRANCE_RTSP");
+        cameras.flush();
         var space = spaces.saveAndFlush(new ParkingSpace(zone, "A-01", ParkingSpaceType.GENERAL,
             "[{\"x\":0.1,\"y\":0.1},{\"x\":0.4,\"y\":0.1},{\"x\":0.4,\"y\":0.4}]", true,
             List.of(new CameraSpaceMapping(camera.getId(), "[]", 1, 1))));
