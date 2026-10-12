@@ -7,6 +7,7 @@ import static org.mockito.Mockito.*;
 import com.smartparking.audit.domain.AuditLog;
 import com.smartparking.audit.infrastructure.AuditLogRepository;
 import com.smartparking.global.error.ErrorCode;
+import com.smartparking.occupancy.infrastructure.OccupancyCurrentRepository;
 import com.smartparking.parkinglot.application.*;
 import com.smartparking.parkinglot.domain.*;
 import com.smartparking.parkinglot.dto.request.*;
@@ -20,7 +21,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 class ParkingLotServiceTest {
     private final ParkingLotRepository repository = mock(ParkingLotRepository.class);
     private final AuditLogRepository audits = mock(AuditLogRepository.class);
-    private final ParkingLotService service = new ParkingLotService(repository, audits);
+    private final OccupancyCurrentRepository occupancy = mock(OccupancyCurrentRepository.class);
+    private final ParkingLotService service = new ParkingLotService(repository, audits, occupancy);
     private final UUID actor = UUID.randomUUID();
     private final UUID id = UUID.randomUUID();
 
