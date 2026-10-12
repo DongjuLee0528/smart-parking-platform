@@ -108,6 +108,25 @@ class OccupancyControllerTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.data[0].state").value("EMPTY"))
             .andExpect(jsonPath("$.data[0].observedAt").value("2026-10-01T00:00:05Z"));
+
+        var availability = path + "/availability";
+        mvc.perform(get(availability).header("Authorization", "Bearer viewer-token"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.availableSpaces").value(0));
+        cameras.updateObservedStatus(camera.getId(), camera.getConfigVersion(), "ONLINE", observedAt);
+        mvc.perform(get(availability).header("Authorization", "Bearer viewer-token"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.floorId").value(floor.getId().toString()))
+            .andExpect(jsonPath("$.data.availableSpaces").value(1));
+        cameras.updateObservedStatus(camera.getId(), camera.getConfigVersion(), "OFFLINE", observedAt.plusSeconds(10));
+        cameras.updateObservedStatus(camera.getId(), camera.getConfigVersion(), "ONLINE", observedAt.plusSeconds(5));
+        mvc.perform(get(availability).header("Authorization", "Bearer viewer-token"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.availableSpaces").value(0));
+        cameras.updateObservedStatus(camera.getId(), camera.getConfigVersion(), "DEGRADED", observedAt.plusSeconds(20));
+        mvc.perform(get(availability).header("Authorization", "Bearer viewer-token"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.availableSpaces").value(1));
     }
 
     @Test
@@ -115,12 +134,16 @@ class OccupancyControllerTest {
         var missing = "/api/v1/floors/" + UUID.randomUUID() + "/occupancy";
         mvc.perform(get(missing)).andExpect(status().isUnauthorized())
             .andExpect(jsonPath("$.code").value("AUTH_TOKEN_INVALID"));
+        mvc.perform(get(missing + "/availability")).andExpect(status().isUnauthorized());
         mvc.perform(get(missing).header("Authorization", "Bearer invalid"))
             .andExpect(status().isUnauthorized());
         mvc.perform(get(missing).header("Authorization", "Bearer viewer-token"))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.code").value("PARKING_FLOOR_NOT_FOUND"))
             .andExpect(jsonPath("$.traceId").isString());
+        mvc.perform(get(missing + "/availability").header("Authorization", "Bearer viewer-token"))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.code").value("PARKING_FLOOR_NOT_FOUND"));
         mvc.perform(get("/api/v1/floors/not-a-uuid/occupancy")
                 .header("Authorization", "Bearer viewer-token"))
             .andExpect(status().isUnprocessableEntity())

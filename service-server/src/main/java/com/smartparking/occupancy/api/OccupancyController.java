@@ -3,6 +3,7 @@ package com.smartparking.occupancy.api;
 import com.smartparking.global.api.ApiResponse;
 import com.smartparking.occupancy.application.OccupancyService;
 import com.smartparking.occupancy.dto.response.OccupancyStateResponse;
+import com.smartparking.occupancy.dto.response.FloorAvailabilityResponse;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,5 +23,10 @@ public class OccupancyController {
     @GetMapping
     public ApiResponse<List<OccupancyStateResponse>> floorSnapshot(@PathVariable UUID floorId) {
         return new ApiResponse<>(service.floorSnapshot(floorId));
+    }
+
+    @GetMapping("/availability")
+    public ApiResponse<FloorAvailabilityResponse> floorAvailability(@PathVariable UUID floorId) {
+        return new ApiResponse<>(service.floorAvailability(floorId));
     }
 }
