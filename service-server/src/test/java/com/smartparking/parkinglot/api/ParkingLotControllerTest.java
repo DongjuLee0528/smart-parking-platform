@@ -111,7 +111,8 @@ class ParkingLotControllerTest {
             .andExpect(status().isOk()).andExpect(jsonPath("$.data.items").isArray());
         verify(service).list(0, 20, "name,asc", false);
         mvc.perform(get("/api/v1/admin/parking-lots/" + LOT).header("Authorization", "Bearer admin"))
-            .andExpect(status().isOk()).andExpect(jsonPath("$.data.setupStatus").value("DRAFT"));
+            .andExpect(status().isOk()).andExpect(jsonPath("$.data.setupStatus").value("DRAFT"))
+            .andExpect(jsonPath("$.data.availability").doesNotExist());
     }
 
     @Configuration @EnableWebMvc @EnableWebSecurity

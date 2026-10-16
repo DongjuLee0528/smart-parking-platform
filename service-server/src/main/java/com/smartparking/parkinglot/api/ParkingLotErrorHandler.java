@@ -9,6 +9,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 
 @RestControllerAdvice(assignableTypes = {ParkingLotController.class, AdminParkingLotController.class})
 public class ParkingLotErrorHandler {
@@ -23,7 +24,7 @@ public class ParkingLotErrorHandler {
     }
 
     @ExceptionHandler({MethodArgumentNotValidException.class, HttpMessageNotReadableException.class,
-        MethodArgumentTypeMismatchException.class})
+        MethodArgumentTypeMismatchException.class, MissingServletRequestParameterException.class})
     public ResponseEntity<ErrorResponse> validation(Exception exception) {
         return response(HttpStatus.UNPROCESSABLE_ENTITY, ErrorCode.VALIDATION_FAILED, "Invalid parking lot request");
     }
