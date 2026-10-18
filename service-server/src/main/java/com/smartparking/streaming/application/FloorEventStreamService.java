@@ -24,6 +24,19 @@ public class FloorEventStreamService {
     // shortcut: replay is process-local and bounded; use shared durable events when running multiple instances.
     private final Deque<PublishedEvent> history = new ArrayDeque<>();
 
+    public String latestEventId(UUID floorId) {
+        synchronized (history) {
+            var events = history.descendingIterator();
+            while (events.hasNext()) {
+                var event = events.next();
+                if (event.response().floorId().equals(floorId)) {
+                    return event.id();
+                }
+            }
+        }
+        return null;
+    }
+
     public SseEmitter subscribe(UUID floorId, String lastEventId) {
         var emitter = new SseEmitter(STREAM_TIMEOUT_MILLIS);
         var floorSubscribers = subscribers.computeIfAbsent(floorId, ignored -> new ArrayList<>());

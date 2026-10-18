@@ -49,6 +49,21 @@ class FloorEventStreamServiceTest {
         }
     }
 
+    @Test
+    void exposesLatestReplayCursorOnlyForItsFloor() {
+        var service = new FloorEventStreamService();
+        var floorA = UUID.randomUUID();
+        var floorB = UUID.randomUUID();
+        assertThat(service.latestEventId(floorA)).isNull();
+        service.publish(event(floorA));
+        var first = service.latestEventId(floorA);
+        assertThat(first).isNotBlank();
+        service.publish(event(floorB));
+        assertThat(service.latestEventId(floorA)).isEqualTo(first);
+        service.publish(event(floorA));
+        assertThat(service.latestEventId(floorA)).isNotEqualTo(first);
+    }
+
     private OccupancyChangedEvent event(UUID floorId) {
         return new OccupancyChangedEvent(floorId, new OccupancyStateResponse(UUID.randomUUID(), UUID.randomUUID(),
             "A-01", true, OccupancyState.OCCUPIED, 0.9, Instant.parse("2026-10-01T00:00:00Z")));

@@ -20,6 +20,7 @@ import com.smartparking.parkingspace.infrastructure.ParkingSpaceRepository;
 import com.smartparking.parkingzone.domain.ParkingZone;
 import com.smartparking.parkingzone.infrastructure.ParkingZoneRepository;
 import jakarta.persistence.EntityManager;
+import org.springframework.context.ApplicationEventPublisher;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -41,10 +42,12 @@ public class ParkingSpaceService {
     private final AuditLogRepository audits;
     private final EntityManager entityManager;
     private final ObjectMapper mapper;
+    private final ApplicationEventPublisher events;
 
     public ParkingSpaceService(ParkingFloorRepository floors, ParkingZoneRepository zones,
                                CameraRepository cameras, ParkingSpaceRepository spaces,
-                               AuditLogRepository audits, EntityManager entityManager, ObjectMapper mapper) {
+                               AuditLogRepository audits, EntityManager entityManager, ObjectMapper mapper,
+                               ApplicationEventPublisher events) {
         this.floors = floors;
         this.zones = zones;
         this.cameras = cameras;
@@ -52,6 +55,7 @@ public class ParkingSpaceService {
         this.audits = audits;
         this.entityManager = entityManager;
         this.mapper = mapper;
+        this.events = events;
     }
 
     @Transactional
@@ -114,6 +118,7 @@ public class ParkingSpaceService {
         var result = response(floorId, floor.getSpacesVersion(), latest);
         audits.save(new AuditLog(actorId, "PARKING_SPACE", "SAVE", floorId, before,
             summary(result.version(), latest)));
+        events.publishEvent(new ParkingSpacesChangedEvent(floorId));
         return result;
     }
 
