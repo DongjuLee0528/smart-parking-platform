@@ -6,6 +6,7 @@ import static org.mockito.Mockito.*;
 
 import com.smartparking.audit.domain.AuditLog;
 import com.smartparking.audit.infrastructure.AuditLogRepository;
+import com.smartparking.camera.infrastructure.CameraRepository;
 import com.smartparking.global.error.ErrorCode;
 import com.smartparking.occupancy.infrastructure.OccupancyCurrentRepository;
 import com.smartparking.parkinglot.application.*;
@@ -22,7 +23,8 @@ class ParkingLotServiceTest {
     private final ParkingLotRepository repository = mock(ParkingLotRepository.class);
     private final AuditLogRepository audits = mock(AuditLogRepository.class);
     private final OccupancyCurrentRepository occupancy = mock(OccupancyCurrentRepository.class);
-    private final ParkingLotService service = new ParkingLotService(repository, audits, occupancy);
+    private final CameraRepository cameras = mock(CameraRepository.class);
+    private final ParkingLotService service = new ParkingLotService(repository, audits, occupancy, cameras);
     private final UUID actor = UUID.randomUUID();
     private final UUID id = UUID.randomUUID();
 
