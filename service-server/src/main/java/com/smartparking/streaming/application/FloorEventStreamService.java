@@ -1,6 +1,7 @@
 package com.smartparking.streaming.application;
 
 import com.smartparking.occupancy.application.OccupancyChangedEvent;
+import com.smartparking.parkingspace.application.ParkingSpacesChangedEvent;
 import com.smartparking.streaming.domain.FloorEventType;
 import com.smartparking.streaming.dto.response.FloorEventResponse;
 import java.io.IOException;
@@ -78,9 +79,19 @@ public class FloorEventStreamService {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void publish(OccupancyChangedEvent event) {
-        var published = new PublishedEvent(UUID.randomUUID().toString(),
-            new FloorEventResponse(FloorEventType.OCCUPANCY_CHANGED, event.floorId(), event.occupancy()));
-        var floorSubscribers = subscribers.computeIfAbsent(event.floorId(), ignored -> new ArrayList<>());
+        broadcast(event.floorId(), new FloorEventResponse(
+            FloorEventType.OCCUPANCY_CHANGED, event.floorId(), event.occupancy()));
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void publish(ParkingSpacesChangedEvent event) {
+        broadcast(event.floorId(), new FloorEventResponse(
+            FloorEventType.FLOOR_SNAPSHOT_REQUIRED, event.floorId(), null));
+    }
+
+    private void broadcast(UUID floorId, FloorEventResponse response) {
+        var published = new PublishedEvent(UUID.randomUUID().toString(), response);
+        var floorSubscribers = subscribers.computeIfAbsent(floorId, ignored -> new ArrayList<>());
         synchronized (floorSubscribers) {
             synchronized (history) {
                 history.addLast(published);
@@ -92,7 +103,7 @@ public class FloorEventStreamService {
                 try {
                     send(emitter, published);
                 } catch (IOException | IllegalStateException exception) {
-                    remove(event.floorId(), emitter);
+                    remove(floorId, emitter);
                     emitter.completeWithError(exception);
                 }
             }
