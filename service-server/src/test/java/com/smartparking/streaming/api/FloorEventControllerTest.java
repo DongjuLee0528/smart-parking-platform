@@ -11,6 +11,7 @@ import com.smartparking.camera.domain.Camera;
 import com.smartparking.camera.domain.CameraSpaceMapping;
 import com.smartparking.camera.domain.CameraStatus;
 import com.smartparking.camera.infrastructure.CameraRepository;
+import com.smartparking.audit.infrastructure.AuditLogRepository;
 import com.smartparking.global.security.FirebaseTokenVerificationException;
 import com.smartparking.global.security.FirebaseTokenVerifier;
 import com.smartparking.global.security.Role;
@@ -20,18 +21,23 @@ import com.smartparking.occupancy.dto.request.AiOccupancyResultRequest;
 import com.smartparking.parkinglot.domain.ParkingLot;
 import com.smartparking.parkinglot.dto.request.CreateParkingLotRequest;
 import com.smartparking.parkinglot.infrastructure.ParkingLotRepository;
+import com.smartparking.parkingspace.application.ParkingSpaceService;
 import com.smartparking.parkingspace.domain.ParkingSpace;
 import com.smartparking.parkingspace.domain.ParkingSpaceType;
+import com.smartparking.parkingspace.dto.NormalizedPoint;
+import com.smartparking.parkingspace.dto.request.SaveParkingSpacesRequest;
 import com.smartparking.parkingspace.infrastructure.ParkingSpaceRepository;
 import com.smartparking.service.SmartParkingServiceApplication;
 import com.smartparking.user.domain.User;
 import com.smartparking.user.domain.UserStatus;
 import com.smartparking.user.infrastructure.UserRepository;
+import com.smartparking.streaming.application.FloorEventStreamService;
 import java.time.Instant;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -54,14 +60,27 @@ class FloorEventControllerTest {
     @Autowired CameraRepository cameras;
     @Autowired ParkingSpaceRepository spaces;
     @Autowired OccupancyService occupancy;
+    @Autowired ParkingSpaceService parkingSpaceService;
+    @Autowired FloorEventStreamService stream;
+    @Autowired AuditLogRepository audits;
     @Autowired TransactionTemplate transactions;
+    UUID actorId;
+    UUID layoutChangedFloorId;
     MockMvc mvc;
+
+    @AfterEach
+    void cleanLayoutChangeAudit() {
+        if (layoutChangedFloorId != null) {
+            audits.deleteAll(audits.findAll().stream()
+                .filter(audit -> audit.getEntityId().equals(layoutChangedFloorId)).toList());
+        }
+    }
 
     @BeforeEach
     void setUp() {
         var uid = UUID.randomUUID().toString();
-        users.saveAndFlush(new User(null, uid, uid + "@example.com",
-            "Viewer", Role.USER, UserStatus.ACTIVE));
+        actorId = users.saveAndFlush(new User(null, uid, uid + "@example.com",
+            "Viewer", Role.USER, UserStatus.ACTIVE)).getId();
         when(verifier.verify("viewer-token")).thenReturn(uid);
         when(verifier.verify("invalid")).thenThrow(new FirebaseTokenVerificationException(
             new IllegalArgumentException("Rejected")));
@@ -129,6 +148,57 @@ class FloorEventControllerTest {
         assertThat(unknownCursor.getResponse().getContentAsString()).contains("FLOOR_SNAPSHOT_REQUIRED");
         assertThat(subscribe(second.floorId(), eventId).getResponse().getContentAsString())
             .contains("FLOOR_SNAPSHOT_REQUIRED");
+    }
+
+    @Test
+    void committedLayoutChangeRequiresSnapshotAndReplaysAfterReconnect() throws Exception {
+        var first = fixture("Map B1");
+        layoutChangedFloorId = first.floorId();
+        var second = fixture("Map B2");
+        occupancy.ingest(result(first, UUID.randomUUID(), FIRST, OccupancyState.EMPTY));
+        var previousCursor = stream.latestEventId(first.floorId());
+        assertThat(previousCursor).isNotBlank();
+        mvc.perform(get("/api/v1/floors/{floorId}/map", first.floorId())
+                .header("Authorization", "Bearer viewer-token"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.mapVersion").value(0))
+            .andExpect(jsonPath("$.data.eventVersion").value(previousCursor));
+        var watched = subscribe(first.floorId(), previousCursor);
+        var other = subscribe(second.floorId(), null);
+        var zoneId = spaces.findById(first.spaceId()).orElseThrow().getZone().getId();
+        var polygon = List.of(new NormalizedPoint(0.1, 0.1), new NormalizedPoint(0.4, 0.1),
+            new NormalizedPoint(0.4, 0.4));
+        var item = new SaveParkingSpacesRequest.Item(first.spaceId(), zoneId, "A-01",
+            ParkingSpaceType.GENERAL, true, polygon, List.of());
+
+        transactions.executeWithoutResult(status -> {
+            parkingSpaceService.save(actorId, first.floorId(),
+                new SaveParkingSpacesRequest(0L, List.of(item)));
+            assertThat(stream.latestEventId(first.floorId())).isEqualTo(previousCursor);
+            assertThat(watched.getResponse().getContentAsByteArray()).isEmpty();
+        });
+
+        var changed = watched.getResponse().getContentAsString();
+        assertThat(changed).contains("FLOOR_SNAPSHOT_REQUIRED", "id:");
+        assertThat(other.getResponse().getContentAsString()).doesNotContain("id:");
+        var newCursor = stream.latestEventId(first.floorId());
+        assertThat(newCursor).isNotEqualTo(previousCursor);
+        mvc.perform(get("/api/v1/floors/{floorId}/map", first.floorId())
+                .header("Authorization", "Bearer viewer-token"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.mapVersion").value(1))
+            .andExpect(jsonPath("$.data.eventVersion").value(newCursor))
+            .andExpect(jsonPath("$.data.spaces[0].mapPolygon[0].x").value(0.1));
+        assertThat(subscribe(first.floorId(), previousCursor).getResponse().getContentAsString())
+            .contains("FLOOR_SNAPSHOT_REQUIRED", "id:");
+
+        transactions.executeWithoutResult(status -> {
+            parkingSpaceService.save(actorId, first.floorId(),
+                new SaveParkingSpacesRequest(1L, List.of(item)));
+            status.setRollbackOnly();
+        });
+        assertThat(stream.latestEventId(first.floorId())).isEqualTo(newCursor);
+        assertThat(watched.getResponse().getContentAsString()).isEqualTo(changed);
     }
 
     private MvcResult subscribe(UUID floorId, String lastEventId) throws Exception {
