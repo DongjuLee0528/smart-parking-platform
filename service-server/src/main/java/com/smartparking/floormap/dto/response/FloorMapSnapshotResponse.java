@@ -9,6 +9,7 @@ import java.util.UUID;
 
 public record FloorMapSnapshotResponse(
     UUID floorId, UUID parkingLotId, String floorName, long mapVersion, String eventVersion,
+    MapVersionResponse drawing,
     List<Zone> zones, List<Space> spaces
 ) {
     public record Zone(UUID id, String name) {}
