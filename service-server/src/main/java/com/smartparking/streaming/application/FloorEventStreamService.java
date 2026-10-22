@@ -1,6 +1,7 @@
 package com.smartparking.streaming.application;
 
 import com.smartparking.occupancy.application.OccupancyChangedEvent;
+import com.smartparking.floormap.application.FloorDrawingChangedEvent;
 import com.smartparking.parkingspace.application.ParkingSpacesChangedEvent;
 import com.smartparking.streaming.domain.FloorEventType;
 import com.smartparking.streaming.dto.response.FloorEventResponse;
@@ -85,6 +86,12 @@ public class FloorEventStreamService {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void publish(ParkingSpacesChangedEvent event) {
+        broadcast(event.floorId(), new FloorEventResponse(
+            FloorEventType.FLOOR_SNAPSHOT_REQUIRED, event.floorId(), null));
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void publish(FloorDrawingChangedEvent event) {
         broadcast(event.floorId(), new FloorEventResponse(
             FloorEventType.FLOOR_SNAPSHOT_REQUIRED, event.floorId(), null));
     }
