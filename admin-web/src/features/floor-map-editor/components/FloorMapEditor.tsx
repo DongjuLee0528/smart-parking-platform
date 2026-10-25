@@ -2,9 +2,9 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { getFloorMap, saveFloorDrawing } from '../api/floorMapApi';
 import type { FloorMap } from '../types/FloorMap';
 
-type Props = { floorId: string; token: string };
+type Props = { floorId: string };
 
-export function FloorMapEditor({ floorId, token }: Props) {
+export function FloorMapEditor({ floorId }: Props) {
   const [map, setMap] = useState<FloorMap | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [message, setMessage] = useState('');
@@ -14,11 +14,11 @@ export function FloorMapEditor({ floorId, token }: Props) {
     let current = true;
     setMap(null);
     setFile(null);
-    getFloorMap(floorId, token)
+    getFloorMap(floorId)
       .then((result) => { if (current) setMap(result); })
       .catch(() => { if (current) setMessage('도면 정보를 불러오지 못했습니다.'); });
     return () => { current = false; };
-  }, [floorId, token]);
+  }, [floorId]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -27,7 +27,7 @@ export function FloorMapEditor({ floorId, token }: Props) {
     setBusy(true);
     setMessage('');
     try {
-      const drawing = await saveFloorDrawing(floorId, token, map.mapVersion, file);
+      const drawing = await saveFloorDrawing(floorId, map.mapVersion, file);
       setMap({ ...map, mapVersion: drawing.version, drawing });
       setFile(null);
       form.reset();
@@ -35,7 +35,7 @@ export function FloorMapEditor({ floorId, token }: Props) {
     } catch {
       setMessage('도면 저장에 실패했습니다. 최신 버전을 확인한 뒤 다시 시도하세요.');
       try {
-        setMap(await getFloorMap(floorId, token));
+        setMap(await getFloorMap(floorId));
       } catch {
         setMap(null);
         setMessage('최신 도면 정보를 불러오지 못했습니다. 페이지를 다시 여세요.');

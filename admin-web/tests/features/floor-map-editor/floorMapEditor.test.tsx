@@ -20,12 +20,12 @@ describe('floor map editor', () => {
     vi.mocked(saveFloorDrawing).mockResolvedValue({
       version: 3, url: '/api/v1/floors/floor-id/map/drawing', mediaType: 'image/png', width: 100, height: 80,
     });
-    render(<FloorMapEditor floorId="floor-id" token="admin-token" />);
+    render(<FloorMapEditor floorId="floor-id" />);
     expect(await screen.findByText(/현재 버전: 2/)).toBeInTheDocument();
     const file = new File(['image'], 'map.png', { type: 'image/png' });
     fireEvent.change(screen.getByLabelText(/SVG, PNG/), { target: { files: [file] } });
     fireEvent.click(screen.getByRole('button', { name: '도면 등록·교체' }));
-    await waitFor(() => expect(saveFloorDrawing).toHaveBeenCalledWith('floor-id', 'admin-token', 2, file));
+    await waitFor(() => expect(saveFloorDrawing).toHaveBeenCalledWith('floor-id', 2, file));
     expect(await screen.findByText(/현재 버전: 3/)).toBeInTheDocument();
     expect(screen.getByRole('status')).toHaveTextContent('도면이 저장되었습니다.');
   });
