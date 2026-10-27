@@ -3,9 +3,10 @@ import { describe, expect, it } from 'vitest';
 import { App } from '../src/app/App';
 
 describe('App', () => {
-  it('renders the admin shell', () => {
+  it('requires Firebase configuration before sign-in', async () => {
     render(<App />);
 
-    expect(screen.getByRole('heading', { name: 'Smart Parking Admin' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Smart Parking Admin' })).toBeInTheDocument();
+    expect(screen.getByText('Firebase web configuration is missing.')).toBeInTheDocument();
   });
 });
