@@ -12,7 +12,7 @@ import { DashboardPage } from '../../../src/pages/DashboardPage';
 
 const state = vi.hoisted(() => ({
   listener: null as null | ((user: unknown) => Promise<void>),
-  auth: { currentUser: null as null | { getIdToken: () => Promise<string> } },
+  auth: { currentUser: null as null | { uid: string; getIdToken: () => Promise<string> } },
 }));
 
 vi.mock('../../../src/features/authentication/api/firebaseAuth', () => ({
@@ -60,17 +60,56 @@ describe('administrator authentication', () => {
     vi.mocked(getCurrentUser).mockResolvedValue({ id: '1', email: 'admin@example.com',
       displayName: 'Admin', role: 'ADMIN', status: 'ACTIVE' });
     renderAdmin();
-    state.auth.currentUser = { getIdToken: async () => 'admin-token' };
+    state.auth.currentUser = { uid: 'admin-1', getIdToken: async () => 'admin-token' };
     await authChanged(state.auth.currentUser);
     expect(await screen.findByText('Signed in as Admin')).toBeInTheDocument();
     expect(signOut).not.toHaveBeenCalled();
+  });
+
+  it('keeps protected page state while the same user token is reverified', async () => {
+    const admin = { id: '1', email: 'admin@example.com', displayName: 'Admin',
+      role: 'ADMIN' as const, status: 'ACTIVE' as const };
+    let finishRefresh: ((user: typeof admin) => void) | undefined;
+    vi.mocked(getCurrentUser).mockResolvedValueOnce(admin).mockImplementationOnce(() =>
+      new Promise<typeof admin>((resolve) => { finishRefresh = resolve; }));
+    renderAdmin();
+    const firebaseUser = { uid: 'admin-1', getIdToken: async () => 'admin-token' };
+    state.auth.currentUser = firebaseUser;
+    await authChanged(firebaseUser);
+    const input = screen.getByLabelText('Floor ID');
+    fireEvent.change(input, { target: { value: '42' } });
+
+    let refresh: Promise<void> | undefined;
+    act(() => { refresh = state.listener?.(firebaseUser); });
+    expect(screen.getByLabelText('Floor ID')).toBe(input);
+    expect(input).toHaveValue('42');
+    expect(screen.queryByText('Checking session…')).not.toBeInTheDocument();
+
+    await act(async () => { finishRefresh?.(admin); await refresh; });
+    expect(getCurrentUser).toHaveBeenCalledTimes(2);
+  });
+
+  it('revokes protected access if the same user loses administrator status', async () => {
+    const admin = { id: '1', email: 'admin@example.com', displayName: 'Admin',
+      role: 'ADMIN' as const, status: 'ACTIVE' as const };
+    vi.mocked(getCurrentUser).mockResolvedValueOnce(admin)
+      .mockResolvedValueOnce({ ...admin, role: 'USER' });
+    renderAdmin();
+    const firebaseUser = { uid: 'admin-1', getIdToken: async () => 'admin-token' };
+    state.auth.currentUser = firebaseUser;
+    await authChanged(firebaseUser);
+    await authChanged(firebaseUser);
+
+    expect(signOut).toHaveBeenCalledOnce();
+    expect(screen.queryByText('Signed in as Admin')).not.toBeInTheDocument();
+    expect(await screen.findByText('This account does not have administrator access.')).toBeInTheDocument();
   });
 
   it('signs out USER accounts and denied sessions', async () => {
     vi.mocked(getCurrentUser).mockResolvedValue({ id: '2', email: 'user@example.com',
       displayName: 'User', role: 'USER', status: 'ACTIVE' });
     renderAdmin();
-    state.auth.currentUser = { getIdToken: async () => 'user-token' };
+    state.auth.currentUser = { uid: 'user-1', getIdToken: async () => 'user-token' };
     await authChanged(state.auth.currentUser);
     expect(signOut).toHaveBeenCalledOnce();
     expect(await screen.findByText('This account does not have administrator access.')).toBeInTheDocument();
@@ -80,7 +119,7 @@ describe('administrator authentication', () => {
   it('clears a session rejected by the server', async () => {
     vi.mocked(getCurrentUser).mockRejectedValue(new Error('Unauthorized'));
     renderAdmin();
-    state.auth.currentUser = { getIdToken: async () => 'expired-token' };
+    state.auth.currentUser = { uid: 'admin-1', getIdToken: async () => 'expired-token' };
     await authChanged(state.auth.currentUser);
     expect(signOut).toHaveBeenCalledOnce();
     expect(await screen.findByText('Your session could not be verified. Please sign in again.'))
@@ -91,7 +130,7 @@ describe('administrator authentication', () => {
     vi.mocked(getCurrentUser).mockResolvedValue({ id: '1', email: 'admin@example.com',
       displayName: 'Admin', role: 'ADMIN', status: 'ACTIVE' });
     renderAdmin();
-    state.auth.currentUser = { getIdToken: async () => 'admin-token' };
+    state.auth.currentUser = { uid: 'admin-1', getIdToken: async () => 'admin-token' };
     await authChanged(state.auth.currentUser);
     fireEvent.click(screen.getByRole('button', { name: 'Sign out' }));
     await waitFor(() => expect(signOut).toHaveBeenCalledOnce());
@@ -100,7 +139,7 @@ describe('administrator authentication', () => {
 
   it('gets a fresh Firebase ID token for each API request', async () => {
     const getIdToken = vi.fn().mockResolvedValueOnce('first-token').mockResolvedValueOnce('second-token');
-    state.auth.currentUser = { getIdToken };
+    state.auth.currentUser = { uid: 'admin-1', getIdToken };
     const headers: string[] = [];
     for (let index = 0; index < 2; index++) {
       await apiClient.get('/me', { adapter: async (config) => {
@@ -112,7 +151,7 @@ describe('administrator authentication', () => {
   });
 
   it('signs out when the server rejects an expired token', async () => {
-    state.auth.currentUser = { getIdToken: async () => 'expired-token' };
+    state.auth.currentUser = { uid: 'admin-1', getIdToken: async () => 'expired-token' };
     await expect(apiClient.get('/me', { adapter: async (config) => {
       const response = { data: {}, status: 401, statusText: 'Unauthorized', headers: {}, config };
       throw new AxiosError('Unauthorized', 'ERR_BAD_RESPONSE', config, undefined, response);
