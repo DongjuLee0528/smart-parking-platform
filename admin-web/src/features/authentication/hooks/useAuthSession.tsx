@@ -27,7 +27,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const currentAuth = auth;
     let active = true;
     let generation = 0;
+    let currentUid: string | null = null;
     async function rejectSession(message: string) {
+      setUser(null);
+      setLoading(false);
       setError(message);
       try {
         await signOut(currentAuth);
@@ -38,10 +41,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onIdTokenChanged(currentAuth, async (firebaseUser) => {
       const current = ++generation;
       if (!firebaseUser) {
+        currentUid = null;
         if (active) { setUser(null); setLoading(false); }
         return;
       }
-      if (active) { setUser(null); setLoading(true); }
+      if (firebaseUser.uid !== currentUid) {
+        currentUid = firebaseUser.uid;
+        if (active) { setUser(null); setLoading(true); }
+      }
       try {
         const candidate = await getCurrentUser();
         if (!active || current !== generation) return;
