@@ -5,6 +5,7 @@ import { useAuthSession } from '../features/authentication/hooks/useAuthSession'
 export function DashboardPage() {
   const { user, logout } = useAuthSession();
   const [floorId, setFloorId] = useState('');
+  const [lotId, setLotId] = useState('');
   const [logoutError, setLogoutError] = useState('');
   const navigate = useNavigate();
 
@@ -31,6 +32,11 @@ export function DashboardPage() {
         <label htmlFor="floor-id">Floor ID</label>
         <input id="floor-id" value={floorId} onChange={(event) => setFloorId(event.target.value)} required />
         <button type="submit">Open floor drawing</button>
+      </form>
+      <form onSubmit={(event) => { event.preventDefault(); navigate(`/parking-lots/${encodeURIComponent(lotId.trim())}/floors`); }}>
+        <label htmlFor="lot-id">Parking lot ID</label>
+        <input id="lot-id" value={lotId} onChange={(event) => setLotId(event.target.value)} required />
+        <button type="submit">Manage floors and zones</button>
       </form>
     </main>
   );
