@@ -26,7 +26,7 @@ public class FloorEventController {
     @GetMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter events(@PathVariable UUID floorId,
                              @RequestHeader(value = "Last-Event-ID", required = false) String lastEventId) {
-        if (!floors.existsById(floorId)) {
+        if (floors.findById(floorId).filter(floor -> floor.isActive()).isEmpty()) {
             throw new FloorEventException("Parking floor not found");
         }
         return stream.subscribe(floorId, lastEventId);
