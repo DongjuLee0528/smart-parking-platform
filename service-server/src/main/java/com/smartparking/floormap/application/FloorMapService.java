@@ -72,7 +72,7 @@ public class FloorMapService {
 
     @Transactional(readOnly = true)
     public MapVersion drawing(UUID floorId) {
-        if (!floors.existsById(floorId)) {
+        if (floors.findById(floorId).filter(floor -> floor.isActive()).isEmpty()) {
             throw new FloorMapException(ErrorCode.PARKING_FLOOR_NOT_FOUND, "Parking floor not found");
         }
         return drawings.findFirstByFloorIdOrderByVersionDesc(floorId).orElseThrow(() ->
@@ -84,16 +84,22 @@ public class FloorMapService {
         var eventVersion = events.latestEventId(floorId);
         var floor = floors.findById(floorId).orElseThrow(() ->
             new FloorMapException(ErrorCode.PARKING_FLOOR_NOT_FOUND, "Parking floor not found"));
+        if (!floor.isActive()) {
+            throw new FloorMapException(ErrorCode.PARKING_FLOOR_NOT_FOUND, "Parking floor not found");
+        }
         var layout = spaces.detail(floorId);
-        var spaceIds = layout.spaces().stream().map(space -> space.id()).toList();
+        var activeZoneIds = floor.getZones().stream().filter(zone -> zone.isActive())
+            .map(zone -> zone.getId()).collect(Collectors.toSet());
+        var visibleSpaces = layout.spaces().stream().filter(space -> activeZoneIds.contains(space.zoneId())).toList();
+        var spaceIds = visibleSpaces.stream().map(space -> space.id()).toList();
         var observations = occupancy.findAllById(spaceIds).stream().collect(Collectors.toMap(
             OccupancyCurrent::getParkingSpaceId, Function.identity()));
         var cameraIds = observations.values().stream().map(OccupancyCurrent::getSourceCameraId).distinct().toList();
         var cameraStatuses = cameras.findAllById(cameraIds).stream().collect(Collectors.toMap(
             camera -> camera.getId(), camera -> camera.getStatus()));
-        var zones = floor.getZones().stream().map(zone ->
+        var zones = floor.getZones().stream().filter(zone -> zone.isActive()).map(zone ->
             new FloorMapSnapshotResponse.Zone(zone.getId(), zone.getName())).toList();
-        var mappedSpaces = layout.spaces().stream().map(space -> {
+        var mappedSpaces = visibleSpaces.stream().map(space -> {
             var observation = observations.get(space.id());
             var known = space.active() && observation != null &&
                 cameraStatuses.get(observation.getSourceCameraId()) != null &&

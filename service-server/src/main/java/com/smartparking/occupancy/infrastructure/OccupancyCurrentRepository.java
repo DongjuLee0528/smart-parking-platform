@@ -19,7 +19,7 @@ public interface OccupancyCurrentRepository extends JpaRepository<OccupancyCurre
         JOIN parking_zones z ON z.id = s.zone_id
         LEFT JOIN occupancy_current o ON o.parking_space_id = s.id
         LEFT JOIN cameras c ON c.id = o.source_camera_id
-        WHERE z.floor_id = :floorId AND s.active = TRUE
+        WHERE z.floor_id = :floorId AND z.active = TRUE AND s.active = TRUE
         """, nativeQuery = true)
     List<Object[]> summarizeFloor(@Param("floorId") UUID floorId);
 
