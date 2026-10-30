@@ -22,6 +22,10 @@ public class ParkingFloor {
     private int floorOrder;
     @Column(name = "spaces_version", nullable = false)
     private Long spacesVersion = 0L;
+    @Column(nullable = false)
+    private boolean active = true;
+    @Version @Column(nullable = false)
+    private Long version;
     @OneToMany(mappedBy = "floor", cascade = CascadeType.PERSIST)
     @OrderBy("name ASC")
     private List<ParkingZone> zones = new ArrayList<>();
@@ -31,5 +35,17 @@ public class ParkingFloor {
         name = request.name().strip();
         floorOrder = request.floorOrder();
         request.zones().forEach(zone -> zones.add(new ParkingZone(this, zone)));
+    }
+
+    public ParkingFloor(ParkingLot lot, String name, int floorOrder) {
+        parkingLot = lot;
+        this.name = name.strip();
+        this.floorOrder = floorOrder;
+    }
+
+    public void update(String name, int floorOrder, boolean active) {
+        this.name = name.strip();
+        this.floorOrder = floorOrder;
+        this.active = active;
     }
 }
