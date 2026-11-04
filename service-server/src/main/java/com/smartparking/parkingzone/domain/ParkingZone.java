@@ -16,9 +16,18 @@ public class ParkingZone {
     private ParkingFloor floor;
     @Column(nullable = false, length = 100)
     private String name;
+    @Column(nullable = false)
+    private boolean active = true;
+    @Version @Column(nullable = false)
+    private Long version;
 
     public ParkingZone(ParkingFloor floor, String name) {
         this.floor = floor;
         this.name = name.strip();
+    }
+
+    public void update(String name, boolean active) {
+        this.name = name.strip();
+        this.active = active;
     }
 }

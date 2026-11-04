@@ -4,4 +4,6 @@ import com.smartparking.parkingzone.domain.ParkingZone;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface ParkingZoneRepository extends JpaRepository<ParkingZone, UUID> {}
+public interface ParkingZoneRepository extends JpaRepository<ParkingZone, UUID> {
+    boolean existsByFloorIdAndNameAndIdNot(UUID floorId, String name, UUID id);
+}

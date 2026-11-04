@@ -23,12 +23,18 @@ public record ParkingLotDetailResponse(
     public record Availability(long availableSpaces, long knownSpaces, long totalSpaces, Double confidence) {}
 
     public static ParkingLotDetailResponse from(ParkingLot lot) {
-        return from(lot, null);
+        return from(lot, null, true);
     }
 
     public static ParkingLotDetailResponse from(ParkingLot lot, Map<UUID, Availability> byFloor) {
-        var floors = lot.getFloors().stream().map(floor -> new Floor(floor.getId(), floor.getName(),
-            floor.getFloorOrder(), floor.getZones().stream()
+        return from(lot, byFloor, true);
+    }
+
+    public static ParkingLotDetailResponse from(ParkingLot lot, Map<UUID, Availability> byFloor,
+                                                 boolean includeInactive) {
+        var floors = lot.getFloors().stream().filter(floor -> includeInactive || floor.isActive())
+            .map(floor -> new Floor(floor.getId(), floor.getName(),
+            floor.getFloorOrder(), floor.getZones().stream().filter(zone -> includeInactive || zone.isActive())
                 .map(zone -> new Zone(zone.getId(), zone.getName())).toList(),
             byFloor == null ? null : Objects.requireNonNull(byFloor.get(floor.getId())))).toList();
         Availability availability = null;

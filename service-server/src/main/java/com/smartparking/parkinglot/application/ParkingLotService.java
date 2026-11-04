@@ -72,13 +72,14 @@ public class ParkingLotService {
             .orElseThrow(() -> new ParkingLotException(ErrorCode.PARKING_LOT_NOT_FOUND, "Parking lot not found"));
         var byFloor = new HashMap<UUID, ParkingLotDetailResponse.Availability>();
         for (var floor : lot.getFloors()) {
+            if (!floor.isActive()) continue;
             var summary = occupancy.summarizeFloor(floor.getId()).get(0);
             byFloor.put(floor.getId(), new ParkingLotDetailResponse.Availability(
                 ((Number) summary[0]).longValue(), ((Number) summary[1]).longValue(),
                 ((Number) summary[2]).longValue(),
                 summary[3] == null ? null : ((Number) summary[3]).doubleValue()));
         }
-        return ParkingLotDetailResponse.from(lot, byFloor);
+        return ParkingLotDetailResponse.from(lot, byFloor, false);
     }
 
     public ParkingLotPage list(int page, int size, String sort, boolean admin) {
