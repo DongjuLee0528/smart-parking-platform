@@ -2,6 +2,8 @@ package com.smartparking.parkinglot.api;
 
 import com.smartparking.global.error.*;
 import com.smartparking.parkinglot.application.ParkingLotException;
+import com.smartparking.parkingfloor.api.ParkingFloorController;
+import com.smartparking.parkingzone.api.ParkingZoneController;
 import java.util.*;
 import org.springframework.dao.*;
 import org.springframework.http.*;
@@ -11,12 +13,13 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 
-@RestControllerAdvice(assignableTypes = {ParkingLotController.class, AdminParkingLotController.class})
+@RestControllerAdvice(assignableTypes = {ParkingLotController.class, AdminParkingLotController.class,
+    ParkingFloorController.class, ParkingZoneController.class})
 public class ParkingLotErrorHandler {
     @ExceptionHandler(ParkingLotException.class)
     public ResponseEntity<ErrorResponse> domain(ParkingLotException exception) {
         var status = switch (exception.getCode()) {
-            case PARKING_LOT_NOT_FOUND -> HttpStatus.NOT_FOUND;
+            case PARKING_LOT_NOT_FOUND, PARKING_FLOOR_NOT_FOUND, PARKING_ZONE_NOT_FOUND -> HttpStatus.NOT_FOUND;
             case VERSION_CONFLICT -> HttpStatus.CONFLICT;
             default -> HttpStatus.UNPROCESSABLE_ENTITY;
         };
