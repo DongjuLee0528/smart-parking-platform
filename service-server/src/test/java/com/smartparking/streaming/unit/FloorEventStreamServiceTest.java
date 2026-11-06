@@ -4,10 +4,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mockConstruction;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.smartparking.occupancy.domain.OccupancyState;
 import com.smartparking.occupancy.application.OccupancyChangedEvent;
 import com.smartparking.occupancy.dto.response.OccupancyStateResponse;
+import com.smartparking.parkingzone.infrastructure.ParkingZoneRepository;
 import com.smartparking.streaming.application.FloorEventStreamService;
 import java.time.Instant;
 import java.util.UUID;
@@ -20,7 +23,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 class FloorEventStreamServiceTest {
     @Test
     void stalledClientOnOneFloorDoesNotBlockAnotherFloor() throws Exception {
-        var service = new FloorEventStreamService();
+        var service = service();
         var floorA = UUID.randomUUID();
         var floorB = UUID.randomUUID();
         var blocked = new CountDownLatch(1);
@@ -51,7 +54,7 @@ class FloorEventStreamServiceTest {
 
     @Test
     void exposesLatestReplayCursorOnlyForItsFloor() {
-        var service = new FloorEventStreamService();
+        var service = service();
         var floorA = UUID.randomUUID();
         var floorB = UUID.randomUUID();
         assertThat(service.latestEventId(floorA)).isNull();
@@ -67,5 +70,11 @@ class FloorEventStreamServiceTest {
     private OccupancyChangedEvent event(UUID floorId) {
         return new OccupancyChangedEvent(floorId, new OccupancyStateResponse(UUID.randomUUID(), UUID.randomUUID(),
             "A-01", true, OccupancyState.OCCUPIED, 0.9, Instant.parse("2026-10-01T00:00:00Z")));
+    }
+
+    private FloorEventStreamService service() {
+        var zones = mock(ParkingZoneRepository.class);
+        when(zones.existsByIdAndFloorIdAndActiveTrueAndFloorActiveTrue(any(), any())).thenReturn(true);
+        return new FloorEventStreamService(zones);
     }
 }
