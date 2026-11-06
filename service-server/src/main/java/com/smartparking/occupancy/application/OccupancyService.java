@@ -50,10 +50,9 @@ public class OccupancyService {
 
     @Transactional(readOnly = true)
     public List<OccupancyStateResponse> floorSnapshot(UUID floorId) {
-        if (!floors.existsById(floorId)) {
-            throw new OccupancyException(ErrorCode.PARKING_FLOOR_NOT_FOUND, "Parking floor not found");
-        }
-        var floorSpaces = spaces.findByZoneFloorIdOrderBySpaceNumberAsc(floorId);
+        requireActiveFloor(floorId);
+        var floorSpaces = spaces.findByZoneFloorIdOrderBySpaceNumberAsc(floorId).stream()
+            .filter(space -> space.getZone().isActive()).toList();
         var activeIds = floorSpaces.stream().filter(ParkingSpace::isActive).map(ParkingSpace::getId).toList();
         var latest = current.findAllById(activeIds).stream().collect(Collectors.toMap(
             OccupancyCurrent::getParkingSpaceId, Function.identity()));
@@ -72,10 +71,14 @@ public class OccupancyService {
 
     @Transactional(readOnly = true)
     public FloorAvailabilityResponse floorAvailability(UUID floorId) {
-        if (!floors.existsById(floorId)) {
+        requireActiveFloor(floorId);
+        return new FloorAvailabilityResponse(floorId, current.countAvailableByFloorId(floorId));
+    }
+
+    private void requireActiveFloor(UUID floorId) {
+        if (floors.findById(floorId).filter(floor -> floor.isActive()).isEmpty()) {
             throw new OccupancyException(ErrorCode.PARKING_FLOOR_NOT_FOUND, "Parking floor not found");
         }
-        return new FloorAvailabilityResponse(floorId, current.countAvailableByFloorId(floorId));
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
