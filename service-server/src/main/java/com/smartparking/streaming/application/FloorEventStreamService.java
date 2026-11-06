@@ -3,6 +3,7 @@ package com.smartparking.streaming.application;
 import com.smartparking.occupancy.application.OccupancyChangedEvent;
 import com.smartparking.floormap.application.FloorDrawingChangedEvent;
 import com.smartparking.parkingspace.application.ParkingSpacesChangedEvent;
+import com.smartparking.parkingzone.infrastructure.ParkingZoneRepository;
 import com.smartparking.streaming.domain.FloorEventType;
 import com.smartparking.streaming.dto.response.FloorEventResponse;
 import java.io.IOException;
@@ -25,6 +26,11 @@ public class FloorEventStreamService {
     private final Map<UUID, List<SseEmitter>> subscribers = new ConcurrentHashMap<>();
     // shortcut: replay is process-local and bounded; use shared durable events when running multiple instances.
     private final Deque<PublishedEvent> history = new ArrayDeque<>();
+    private final ParkingZoneRepository zones;
+
+    public FloorEventStreamService(ParkingZoneRepository zones) {
+        this.zones = zones;
+    }
 
     public String latestEventId(UUID floorId) {
         synchronized (history) {
@@ -67,7 +73,9 @@ public class FloorEventStreamService {
                         .data(new FloorEventResponse(FloorEventType.FLOOR_SNAPSHOT_REQUIRED, floorId, null)));
                 } else {
                     for (var event : missed) {
-                        send(emitter, event);
+                        if (visible(event.response())) {
+                            send(emitter, event);
+                        }
                     }
                 }
             } catch (IOException | IllegalStateException exception) {
@@ -97,6 +105,7 @@ public class FloorEventStreamService {
     }
 
     private void broadcast(UUID floorId, FloorEventResponse response) {
+        if (!visible(response)) return;
         var published = new PublishedEvent(UUID.randomUUID().toString(), response);
         var floorSubscribers = subscribers.computeIfAbsent(floorId, ignored -> new ArrayList<>());
         synchronized (floorSubscribers) {
@@ -115,6 +124,11 @@ public class FloorEventStreamService {
                 }
             }
         }
+    }
+
+    private boolean visible(FloorEventResponse response) {
+        return response.occupancy() == null || zones.existsByIdAndFloorIdAndActiveTrueAndFloorActiveTrue(
+            response.occupancy().zoneId(), response.floorId());
     }
 
     private void send(SseEmitter emitter, PublishedEvent event) throws IOException {
