@@ -103,6 +103,12 @@ class ParkingFloorManagementTest {
         mvc.perform(get("/api/v1/floors/{id}/map", floorId)
                 .header("Authorization", "Bearer viewer-token"))
             .andExpect(status().isOk()).andExpect(jsonPath("$.data.spaces.length()").value(0));
+        mvc.perform(get("/api/v1/floors/{id}/occupancy", floorId)
+                .header("Authorization", "Bearer viewer-token"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.data.length()").value(0));
+        mvc.perform(get("/api/v1/floors/{id}/occupancy/availability", floorId)
+                .header("Authorization", "Bearer viewer-token"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.data.availableSpaces").value(0));
 
         mvc.perform(patch("/api/v1/admin/floors/{id}", floorId)
                 .header("Authorization", "Bearer admin-token").contentType(MediaType.APPLICATION_JSON)
@@ -124,9 +130,51 @@ class ParkingFloorManagementTest {
         mvc.perform(get("/api/v1/floors/{id}/map", floorId)
                 .header("Authorization", "Bearer viewer-token"))
             .andExpect(status().isNotFound());
+        mvc.perform(get("/api/v1/floors/{id}/occupancy", floorId)
+                .header("Authorization", "Bearer viewer-token"))
+            .andExpect(status().isNotFound());
+        mvc.perform(get("/api/v1/floors/{id}/occupancy/availability", floorId)
+                .header("Authorization", "Bearer viewer-token"))
+            .andExpect(status().isNotFound());
         assertEquals(6, audits.findAll().stream().filter(a ->
             a.getEntityType().equals("PARKING_FLOOR") || a.getEntityType().equals("PARKING_ZONE")).count());
         assertEquals(1, spaces.count());
+    }
+
+    @Test
+    void recordsUpdatesSeparatelyFromDeactivationAndReactivation() throws Exception {
+        var floorId = createFloor();
+        var zoneBody = mvc.perform(post("/api/v1/admin/floors/{id}/zones", floorId)
+                .header("Authorization", "Bearer admin-token").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"A\"}"))
+            .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        var zoneId = UUID.fromString(mapper.readTree(zoneBody).path("data").path("id").asText());
+
+        for (var body : List.of(
+            "{\"name\":\"B1\",\"floorOrder\":-1,\"version\":0,\"active\":false}",
+            "{\"name\":\"B2\",\"floorOrder\":-2,\"version\":1,\"active\":false}",
+            "{\"name\":\"B2\",\"floorOrder\":-2,\"version\":2,\"active\":true}")) {
+            mvc.perform(patch("/api/v1/admin/floors/{id}", floorId)
+                    .header("Authorization", "Bearer admin-token").contentType(MediaType.APPLICATION_JSON)
+                    .content(body))
+                .andExpect(status().isOk());
+        }
+        for (var body : List.of(
+            "{\"name\":\"A\",\"version\":0,\"active\":false}",
+            "{\"name\":\"C\",\"version\":1,\"active\":false}",
+            "{\"name\":\"C\",\"version\":2,\"active\":true}")) {
+            mvc.perform(patch("/api/v1/admin/zones/{id}", zoneId)
+                    .header("Authorization", "Bearer admin-token").contentType(MediaType.APPLICATION_JSON)
+                    .content(body))
+                .andExpect(status().isOk());
+        }
+        for (var id : List.of(floorId, zoneId)) {
+            var actions = audits.findAll().stream().filter(audit -> audit.getEntityId().equals(id))
+                .map(audit -> audit.getAction()).toList();
+            assertEquals(1, actions.stream().filter("DEACTIVATE"::equals).count());
+            assertEquals(1, actions.stream().filter("UPDATE"::equals).count());
+            assertEquals(1, actions.stream().filter("REACTIVATE"::equals).count());
+        }
     }
 
     @Test

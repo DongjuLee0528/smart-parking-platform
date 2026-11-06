@@ -18,6 +18,8 @@ import com.smartparking.global.security.Role;
 import com.smartparking.occupancy.application.OccupancyService;
 import com.smartparking.occupancy.domain.OccupancyState;
 import com.smartparking.occupancy.dto.request.AiOccupancyResultRequest;
+import com.smartparking.parkingfloor.application.ParkingFloorService;
+import com.smartparking.parkingfloor.dto.request.SaveParkingFloorRequest;
 import com.smartparking.parkinglot.domain.ParkingLot;
 import com.smartparking.parkinglot.dto.request.CreateParkingLotRequest;
 import com.smartparking.parkinglot.infrastructure.ParkingLotRepository;
@@ -27,6 +29,8 @@ import com.smartparking.parkingspace.domain.ParkingSpaceType;
 import com.smartparking.parkingspace.dto.NormalizedPoint;
 import com.smartparking.parkingspace.dto.request.SaveParkingSpacesRequest;
 import com.smartparking.parkingspace.infrastructure.ParkingSpaceRepository;
+import com.smartparking.parkingzone.application.ParkingZoneService;
+import com.smartparking.parkingzone.dto.request.SaveParkingZoneRequest;
 import com.smartparking.service.SmartParkingServiceApplication;
 import com.smartparking.user.domain.User;
 import com.smartparking.user.domain.UserStatus;
@@ -61,6 +65,8 @@ class FloorEventControllerTest {
     @Autowired ParkingSpaceRepository spaces;
     @Autowired OccupancyService occupancy;
     @Autowired ParkingSpaceService parkingSpaceService;
+    @Autowired ParkingFloorService floorManagement;
+    @Autowired ParkingZoneService zoneManagement;
     @Autowired FloorEventStreamService stream;
     @Autowired AuditLogRepository audits;
     @Autowired TransactionTemplate transactions;
@@ -199,6 +205,33 @@ class FloorEventControllerTest {
         });
         assertThat(stream.latestEventId(first.floorId())).isEqualTo(newCursor);
         assertThat(watched.getResponse().getContentAsString()).isEqualTo(changed);
+    }
+
+    @Test
+    void deactivationRefreshesExistingSubscribersAndHidesOccupancyFromLiveAndReplay() throws Exception {
+        var fixture = fixture("Visibility B1");
+        var zoneId = spaces.findById(fixture.spaceId()).orElseThrow().getZone().getId();
+        var watched = subscribe(fixture.floorId(), null);
+        occupancy.ingest(result(fixture, UUID.randomUUID(), FIRST, OccupancyState.OCCUPIED));
+        var firstCursor = stream.latestEventId(fixture.floorId());
+        occupancy.ingest(result(fixture, UUID.randomUUID(), FIRST.plusSeconds(5), OccupancyState.EMPTY));
+
+        zoneManagement.update(actorId, zoneId, new SaveParkingZoneRequest("A", 0L, false));
+        var afterZoneChange = watched.getResponse().getContentAsString();
+        assertThat(afterZoneChange).contains("FLOOR_SNAPSHOT_REQUIRED");
+        occupancy.ingest(result(fixture, UUID.randomUUID(), FIRST.plusSeconds(10), OccupancyState.OCCUPIED));
+        assertThat(watched.getResponse().getContentAsString()).isEqualTo(afterZoneChange);
+        assertThat(subscribe(fixture.floorId(), firstCursor).getResponse().getContentAsString())
+            .contains("FLOOR_SNAPSHOT_REQUIRED").doesNotContain("OCCUPANCY_CHANGED");
+
+        zoneManagement.update(actorId, zoneId, new SaveParkingZoneRequest("A", 1L, true));
+        floorManagement.update(actorId, fixture.floorId(), new SaveParkingFloorRequest("Visibility B1", -1, 0L, false));
+        var afterFloorChange = watched.getResponse().getContentAsString();
+        occupancy.ingest(result(fixture, UUID.randomUUID(), FIRST.plusSeconds(15), OccupancyState.EMPTY));
+        assertThat(watched.getResponse().getContentAsString()).isEqualTo(afterFloorChange);
+        mvc.perform(get("/api/v1/floors/{floorId}/events", fixture.floorId())
+                .header("Authorization", "Bearer viewer-token"))
+            .andExpect(status().isNotFound());
     }
 
     private MvcResult subscribe(UUID floorId, String lastEventId) throws Exception {
