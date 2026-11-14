@@ -12,9 +12,11 @@ import com.smartparking.parkingfloor.infrastructure.ParkingFloorRepository;
 import com.smartparking.parkinglot.application.ParkingLotException;
 import com.smartparking.parkinglot.domain.OperationStatus;
 import com.smartparking.parkinglot.infrastructure.ParkingLotRepository;
+import com.smartparking.parkingspace.application.ParkingSpacesChangedEvent;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,12 +26,15 @@ public class ParkingFloorService {
     private final ParkingFloorRepository floors;
     private final ParkingLotRepository lots;
     private final AuditLogRepository audits;
+    private final ApplicationEventPublisher events;
     private final JsonMapper mapper = JsonMapper.builder().build();
 
-    public ParkingFloorService(ParkingFloorRepository floors, ParkingLotRepository lots, AuditLogRepository audits) {
+    public ParkingFloorService(ParkingFloorRepository floors, ParkingLotRepository lots,
+                               AuditLogRepository audits, ApplicationEventPublisher events) {
         this.floors = floors;
         this.lots = lots;
         this.audits = audits;
+        this.events = events;
     }
 
     public List<ParkingFloorResponse> list(UUID lotId, boolean admin) {
@@ -81,11 +86,14 @@ public class ParkingFloorService {
             throw new ParkingLotException(ErrorCode.VERSION_CONFLICT, "Floor name already exists");
         }
         var before = json(ParkingFloorResponse.from(floor, true));
+        boolean wasActive = floor.isActive();
         floor.update(name, request.floorOrder(), request.active());
         floors.flush();
         var response = ParkingFloorResponse.from(floor, true);
-        audits.save(new AuditLog(actorId, "PARKING_FLOOR", request.active() ? "UPDATE" : "DEACTIVATE",
+        String action = wasActive == request.active() ? "UPDATE" : request.active() ? "REACTIVATE" : "DEACTIVATE";
+        audits.save(new AuditLog(actorId, "PARKING_FLOOR", action,
             floorId, before, json(response)));
+        events.publishEvent(new ParkingSpacesChangedEvent(floorId));
         return response;
     }
 
