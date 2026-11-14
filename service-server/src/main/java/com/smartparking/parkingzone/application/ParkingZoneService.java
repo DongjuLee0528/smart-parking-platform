@@ -11,8 +11,10 @@ import com.smartparking.parkingzone.domain.ParkingZone;
 import com.smartparking.parkingzone.dto.request.SaveParkingZoneRequest;
 import com.smartparking.parkingzone.dto.response.ParkingZoneResponse;
 import com.smartparking.parkingzone.infrastructure.ParkingZoneRepository;
+import com.smartparking.parkingspace.application.ParkingSpacesChangedEvent;
 import java.util.Objects;
 import java.util.UUID;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,12 +24,15 @@ public class ParkingZoneService {
     private final ParkingZoneRepository zones;
     private final ParkingFloorRepository floors;
     private final AuditLogRepository audits;
+    private final ApplicationEventPublisher events;
     private final JsonMapper mapper = JsonMapper.builder().build();
 
-    public ParkingZoneService(ParkingZoneRepository zones, ParkingFloorRepository floors, AuditLogRepository audits) {
+    public ParkingZoneService(ParkingZoneRepository zones, ParkingFloorRepository floors,
+                              AuditLogRepository audits, ApplicationEventPublisher events) {
         this.zones = zones;
         this.floors = floors;
         this.audits = audits;
+        this.events = events;
     }
 
     @Transactional
@@ -68,11 +73,14 @@ public class ParkingZoneService {
             throw new ParkingLotException(ErrorCode.VERSION_CONFLICT, "Zone name already exists");
         }
         var before = json(ParkingZoneResponse.from(zone));
+        boolean wasActive = zone.isActive();
         zone.update(name, request.active());
         zones.flush();
         var response = ParkingZoneResponse.from(zone);
-        audits.save(new AuditLog(actorId, "PARKING_ZONE", request.active() ? "UPDATE" : "DEACTIVATE",
+        String action = wasActive == request.active() ? "UPDATE" : request.active() ? "REACTIVATE" : "DEACTIVATE";
+        audits.save(new AuditLog(actorId, "PARKING_ZONE", action,
             zoneId, before, json(response)));
+        events.publishEvent(new ParkingSpacesChangedEvent(zone.getFloor().getId()));
         return response;
     }
 
