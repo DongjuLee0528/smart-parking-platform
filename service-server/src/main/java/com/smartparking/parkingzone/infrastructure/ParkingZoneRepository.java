@@ -6,4 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ParkingZoneRepository extends JpaRepository<ParkingZone, UUID> {
     boolean existsByFloorIdAndNameAndIdNot(UUID floorId, String name, UUID id);
+    boolean existsByIdAndFloorIdAndActiveTrueAndFloorActiveTrue(UUID id, UUID floorId);
 }
