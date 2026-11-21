@@ -1,8 +1,9 @@
 import axios from 'axios';
 import { useEffect, useRef, useState, type PointerEvent } from 'react';
-import { getFloorDrawing, getFloorMap, getParkingSpaces, saveFloorDrawing, saveParkingSpaces } from '../api/floorMapApi';
+import { getFloorCameras, getFloorDrawing, getFloorMap, getParkingSpaces, saveFloorDrawing, saveParkingSpaces, type FloorCamera } from '../api/floorMapApi';
 import { bounds, movePolygon, newPolygon, rotatePolygon } from '../geometry';
 import type { FloorMap, ParkingSpace, Point } from '../types/FloorMap';
+import { CameraMappingEditor } from './CameraMappingEditor';
 import '../floor-map-editor.css';
 
 type Props = { floorId: string; onDirtyChange?: (dirty: boolean) => void };
@@ -11,6 +12,8 @@ type Drag = { pointerId: number; index: number; x: number; y: number; points: Po
 export function FloorMapEditor({ floorId, onDirtyChange }: Props) {
   const [map, setMap] = useState<FloorMap | null>(null);
   const [spaces, setSpaces] = useState<ParkingSpace[]>([]);
+  const [cameras, setCameras] = useState<FloorCamera[]>([]);
+  const [cameraError, setCameraError] = useState(false);
   const [version, setVersion] = useState<number | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
@@ -30,6 +33,8 @@ export function FloorMapEditor({ floorId, onDirtyChange }: Props) {
     async function load() {
       setLoading(true);
       setMap(null);
+      setCameras([]);
+      setCameraError(false);
       setImageUrl(null);
       setSelected(null);
       setPlacing(false);
@@ -48,6 +53,8 @@ export function FloorMapEditor({ floorId, onDirtyChange }: Props) {
         setSpaces(details.spaces);
         setVersion(details.version);
         setImageUrl(url);
+        try { const available = await getFloorCameras(floorId); if (active) setCameras(available); }
+        catch { if (active) setCameraError(true); }
       } catch (cause) {
         if (active) {
           setMessage(cause instanceof Error && cause.message.startsWith('도면 버전')
@@ -254,6 +261,10 @@ export function FloorMapEditor({ floorId, onDirtyChange }: Props) {
           </div>
           <button type="button" className="map-rotate" disabled={busy} onClick={rotateSelected}>오른쪽으로 90° 회전</button>
           <p className="map-help">드래그하거나 좌표를 직접 수정하세요. 방향은 주차면 모양을 회전해 저장합니다.</p>
+          {cameraError ? <p role="alert" className="map-message map-error">카메라 목록을 불러오지 못했습니다. 새로고침하세요.</p>
+            : <CameraMappingEditor key={current.id ?? 'new-' + selected} space={current} cameras={cameras}
+              disabled={busy}
+              onChange={(cameraMappings) => update(selected, { cameraMappings })} />}
         </> : <p className="map-help">도면의 주차면을 선택하거나 새 주차면을 추가하세요.</p>}
       </aside>
     </div>}

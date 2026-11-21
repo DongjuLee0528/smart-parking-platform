@@ -200,6 +200,26 @@ class FloorMapControllerTest {
     }
 
     @Test
+    void drawingIsNotAvailableAfterFloorIsDeactivated() throws Exception {
+        var floor = lot().getFloors().get(0);
+        var svg = new MockMultipartFile("file", "plan.svg", "image/svg+xml",
+            "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"80\"/>"
+                .getBytes(StandardCharsets.UTF_8));
+        mvc.perform(multipart("/api/v1/admin/floors/{floorId}/map", floor.getId()).file(svg)
+                .param("expectedVersion", "0").header("Authorization", "Bearer admin-token")
+                .with(request -> { request.setMethod("PUT"); return request; }))
+            .andExpect(status().isOk());
+        floor.update(floor.getName(), floor.getFloorOrder(), false);
+        floors.saveAndFlush(floor);
+        entityManager.clear();
+
+        mvc.perform(get("/api/v1/floors/{floorId}/map/drawing", floor.getId())
+                .header("Authorization", "Bearer viewer-token"))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.code").value("PARKING_FLOOR_NOT_FOUND"));
+    }
+
+    @Test
     void uploadRejectsMissingAuthWrongRoleUnsafeSvgAndStaleVersion() throws Exception {
         var floorId = lot().getFloors().get(0).getId();
         var svg = new MockMultipartFile("file", "bad.svg", "image/svg+xml",

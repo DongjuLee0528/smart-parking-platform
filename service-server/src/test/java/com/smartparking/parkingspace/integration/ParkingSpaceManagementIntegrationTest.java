@@ -52,6 +52,11 @@ class ParkingSpaceManagementIntegrationTest {
             true, polygon(), mappings);
     }
 
+    private static List<NormalizedPoint> cameraPolygon() {
+        return List.of(new NormalizedPoint(0.6, 0.5), new NormalizedPoint(0.9, 0.5),
+            new NormalizedPoint(0.9, 0.8), new NormalizedPoint(0.6, 0.8));
+    }
+
     @Test
     @Transactional
     void savesMappedSpaceUpdatesItAndSoftDeactivatesOmissions() {
@@ -65,7 +70,7 @@ class ParkingSpaceManagementIntegrationTest {
             "Entrance", "CAMERA_ENTRANCE_RTSP"));
         var backup = cameras.saveAndFlush(new Camera(lot.getFloors().get(0).getZones().get(0),
             "Backup", "CAMERA_BACKUP_RTSP"));
-        var mapping = new SaveParkingSpacesRequest.Mapping(camera.getId(), 1, polygon());
+        var mapping = new SaveParkingSpacesRequest.Mapping(camera.getId(), 1, cameraPolygon());
         var backupMapping = new SaveParkingSpacesRequest.Mapping(backup.getId(), 2, polygon());
 
         var created = service.save(actor.getId(), floorId,
@@ -75,12 +80,15 @@ class ParkingSpaceManagementIntegrationTest {
         var id = created.spaces().get(0).id();
         assertThat(created.spaces().get(0).mapPolygon()).isEqualTo(polygon());
         assertThat(created.spaces().get(0).cameraMappings().get(0).cameraId()).isEqualTo(camera.getId());
+        assertThat(created.spaces().get(0).cameraMappings().get(0).imagePolygon()).isEqualTo(cameraPolygon());
         entityManager.flush();
         entityManager.clear();
 
         var reloaded = service.detail(floorId);
         assertThat(reloaded.version()).isEqualTo(1);
         assertThat(reloaded.spaces().get(0).id()).isEqualTo(id);
+        assertThat(reloaded.spaces().get(0).mapPolygon()).isEqualTo(polygon());
+        assertThat(reloaded.spaces().get(0).cameraMappings().get(0).imagePolygon()).isEqualTo(cameraPolygon());
         assertThat(reloaded.spaces().get(0).cameraMappings()).hasSize(2);
         var updated = service.save(actor.getId(), floorId,
             new SaveParkingSpacesRequest(1L, List.of(item(id, zoneId, List.of()))));
