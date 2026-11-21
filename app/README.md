@@ -21,10 +21,20 @@ Kakao Map credentials must stay behind app configuration and platform setup. No 
 
 ## APP-001: Firebase login
 
-The app supports email/password sign-in, session restoration and sign-out.
-Enable Email/Password in Firebase Authentication and create a test account in
-the same project used by the Spring Boot Firebase Admin configuration.
-Registration and password reset are outside this task.
+The mobile app supports Google and Apple sign-in. After sign-in or session
+restoration, the app opens Home only after the Spring Boot `GET /api/v1/me`
+request succeeds. The Firebase UID must belong to an active service user.
+
+Enable Google and Apple in the same Firebase project used by Spring Boot.
+Configure Android's signing certificate and iOS's Google URL scheme using the
+provider configuration. Enable the Sign in with Apple capability for the iOS
+Runner and configure the Apple provider's OAuth settings for Android.
+Registration and consent screens are outside this change.
+
+When Google client IDs are required explicitly, pass
+`GOOGLE_SIGN_IN_CLIENT_ID` and `GOOGLE_SIGN_IN_SERVER_CLIENT_ID` as Flutter
+Dart defines. If omitted, the plugin uses native configuration where supported.
+Keep Apple OAuth secrets in the Firebase provider configuration.
 
 Android: register the application ID from `android/app/build.gradle.kts` and
 place `google-services.json` in `android/app/`. The Google Services plugin is
@@ -49,4 +59,4 @@ forced refresh, and signs out if refresh fails or the retry is unauthorized.
 A 403 is returned to the caller without ending the session. Requests to other
 origins/paths and automatic redirects are blocked to protect the bearer token.
 
-Setup reference: https://firebase.google.com/docs/auth/flutter/password-auth
+Setup reference: https://firebase.google.com/docs/auth/flutter/federated-auth
