@@ -3,7 +3,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { FloorMapEditor } from '../../../src/features/floor-map-editor/components/FloorMapEditor';
 import { FloorMapEditorPage } from '../../../src/features/floor-map-editor/pages/FloorMapEditorPage';
-import { getFloorDrawing, getFloorMap, getParkingSpaces, saveFloorDrawing, saveParkingSpaces }
+import { getFloorCameras, getFloorDrawing, getFloorMap, getParkingSpaces, saveFloorDrawing, saveParkingSpaces }
   from '../../../src/features/floor-map-editor/api/floorMapApi';
 import type { FloorMap, ParkingSpace } from '../../../src/features/floor-map-editor/types/FloorMap';
 
@@ -13,6 +13,7 @@ vi.mock('../../../src/features/floor-map-editor/api/floorMapApi', () => ({
   getFloorDrawing: vi.fn(),
   getParkingSpaces: vi.fn(),
   saveParkingSpaces: vi.fn(),
+  getFloorCameras: vi.fn(),
 }));
 
 const map: FloorMap = {
@@ -37,6 +38,10 @@ describe('floor map editor', () => {
     vi.mocked(getFloorMap).mockResolvedValue(map);
     vi.mocked(getFloorDrawing).mockResolvedValue(new Blob(['image'], { type: 'image/png' }));
     vi.mocked(getParkingSpaces).mockResolvedValue({ floorId: 'floor-id', version: 2, spaces: [existing] });
+    vi.mocked(getFloorCameras).mockResolvedValue([
+      { id: 'camera-1', floorId: 'floor-id', name: 'Entry camera', status: 'ONLINE' },
+      { id: 'camera-2', floorId: 'floor-id', name: 'Aisle camera', status: 'ONLINE' },
+    ]);
   });
 
   it('uploads a drawing with the current version', async () => {
@@ -91,6 +96,36 @@ describe('floor map editor', () => {
     const width = Math.max(...saved.mapPolygon.map((point) => point.x))
       - Math.min(...saved.mapPolygon.map((point) => point.x));
     expect(width).toBeCloseTo(0.06);
+  });
+
+  it('saves a camera image area under the selected parking space without changing its map area', async () => {
+    vi.mocked(saveParkingSpaces).mockResolvedValue({ floorId: 'floor-id', version: 3, spaces: [existing] });
+    render(<FloorMapEditor floorId="floor-id" />);
+    fireEvent.pointerDown(await screen.findByRole('button', { name: '주차면 B-12' }),
+      { clientX: 200, clientY: 100, pointerId: 1 });
+    fireEvent.change(screen.getByLabelText('카메라'), { target: { value: 'camera-2' } });
+    fireEvent.change(screen.getByLabelText('카메라 정지 화면 (PNG 또는 JPEG)'),
+      { target: { files: [new File(['image'], 'frame.png', { type: 'image/png' })] } });
+    const image = await screen.findByAltText('Aisle camera 정지 화면');
+    Object.defineProperty(image, 'naturalWidth', { value: 800 });
+    Object.defineProperty(image, 'naturalHeight', { value: 400 });
+    fireEvent.load(image);
+    const canvas = screen.getByLabelText('카메라 영역 지정');
+    Object.defineProperty(canvas, 'getBoundingClientRect', { value: () => ({
+      left: 0, top: 0, width: 200, height: 100,
+    }) });
+    fireEvent.pointerDown(canvas, { clientX: 20, clientY: 10, pointerId: 1 });
+    fireEvent.pointerUp(canvas, { clientX: 100, clientY: 60, pointerId: 1 });
+    fireEvent.click(screen.getByRole('button', { name: '변경 사항 저장' }));
+    await waitFor(() => expect(saveParkingSpaces).toHaveBeenCalled());
+    const saved = vi.mocked(saveParkingSpaces).mock.calls[0][2][0];
+    expect(saved.id).toBe('space-1');
+    expect(saved.mapPolygon).toEqual(existing.mapPolygon);
+    expect(saved.cameraMappings).toEqual([existing.cameraMappings[0], {
+      cameraId: 'camera-2', priority: 2, imagePolygon: [
+        { x: 0.1, y: 0.1 }, { x: 0.5, y: 0.1 }, { x: 0.5, y: 0.6 }, { x: 0.1, y: 0.6 },
+      ],
+    }]);
   });
 
   it('keeps unsaved edits when the server rejects a stale version', async () => {
