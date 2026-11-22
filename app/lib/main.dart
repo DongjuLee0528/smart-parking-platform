@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 import 'features/authentication/presentation/pages/login_page.dart';
+import 'shared/api/api_client.dart';
 import 'shared/firebase/firebase_auth_boundary.dart';
 
 Future<void> main() async {
@@ -24,8 +25,9 @@ Future<void> main() async {
 }
 
 class SmartParkingApp extends StatefulWidget {
-  const SmartParkingApp({super.key, required this.auth});
+  const SmartParkingApp({super.key, required this.auth, this.verifyUser});
   final FirebaseAuthBoundary auth;
+  final Future<void> Function()? verifyUser;
 
   @override
   State<SmartParkingApp> createState() => _SmartParkingAppState();
@@ -55,10 +57,82 @@ class _SmartParkingAppState extends State<SmartParkingApp> {
             );
           }
           return snapshot.data!
-              ? HomePage(auth: widget.auth)
+              ? _VerifiedHome(auth: widget.auth, verifyUser: widget.verifyUser)
               : LoginPage(auth: widget.auth);
         },
       ),
+    );
+  }
+}
+
+class _VerifiedHome extends StatefulWidget {
+  const _VerifiedHome({required this.auth, required this.verifyUser});
+
+  final FirebaseAuthBoundary auth;
+  final Future<void> Function()? verifyUser;
+
+  @override
+  State<_VerifiedHome> createState() => _VerifiedHomeState();
+}
+
+class _VerifiedHomeState extends State<_VerifiedHome> {
+  late Future<void> _verification = _verify();
+
+  Future<void> _verify() async {
+    final verifyUser = widget.verifyUser;
+    if (verifyUser != null) {
+      await verifyUser();
+      return;
+    }
+
+    final client = createApiClient(widget.auth);
+    try {
+      await client.get<dynamic>('/me');
+    } finally {
+      client.close();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<void>(
+      future: _verification,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
+        if (snapshot.hasError) {
+          return Scaffold(
+            body: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('서버에서 계정을 확인하지 못했습니다.'),
+                  TextButton(
+                    onPressed: () => setState(() => _verification = _verify()),
+                    child: const Text('다시 시도'),
+                  ),
+                  TextButton(
+                    onPressed: () async {
+                      try {
+                        await widget.auth.signOut();
+                      } catch (_) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('로그아웃하지 못했습니다.')),
+                          );
+                        }
+                      }
+                    },
+                    child: const Text('로그아웃'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+        return HomePage(auth: widget.auth);
+      },
     );
   }
 }

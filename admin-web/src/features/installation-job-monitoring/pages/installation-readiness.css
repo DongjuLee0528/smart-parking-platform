@@ -1,0 +1,11 @@
+.readiness-page { box-sizing: border-box; margin: 0 auto; }
+.readiness-page > p { color: #596579; line-height: 1.5; }
+.readiness-page > button { margin: 16px 0 24px; padding: 10px 16px; border: 0; border-radius: 8px; background: #3182f6; color: #fff; font: inherit; cursor: pointer; }
+.readiness-page > button:disabled { opacity: .5; cursor: not-allowed; }
+.readiness-page button:focus-visible, .readiness-page a:focus-visible { outline: 3px solid #3182f6; outline-offset: 2px; }
+.readiness-page section { padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; }
+.readiness-page h2 { margin: 0 0 16px; font-size: 22px; }
+.readiness-page li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; border-color: #e79b33; }
+.readiness-page li span { flex: 1 1 240px; }
+.readiness-page li small { color: #596579; }
+@media (max-width: 600px) { .readiness-page { padding: 24px 16px; } .readiness-page section { padding: 14px; } }

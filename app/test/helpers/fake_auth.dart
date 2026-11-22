@@ -4,8 +4,7 @@ import 'package:smart_parking_app/shared/firebase/firebase_auth_boundary.dart';
 class FakeAuth implements FirebaseAuthBoundary {
   FakeAuth({this.signedIn = false});
   bool signedIn;
-  String? email;
-  String? password;
+  LoginProvider? provider;
   Object? signInError;
   bool refreshFails = false;
   int refreshes = 0;
@@ -20,9 +19,8 @@ class FakeAuth implements FirebaseAuthBoundary {
   }
 
   @override
-  Future<void> signIn(String email, String password) async {
-    this.email = email;
-    this.password = password;
+  Future<void> signIn(LoginProvider provider) async {
+    this.provider = provider;
     if (signInError != null) throw signInError!;
     signedIn = true;
     changes.add(true);

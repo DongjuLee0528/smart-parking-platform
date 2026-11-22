@@ -6,7 +6,7 @@ void main() {
   testWidgets('renders the app shell', (tester) async {
     final auth = FakeAuth(signedIn: true);
     addTearDown(auth.changes.close);
-    await tester.pumpWidget(SmartParkingApp(auth: auth));
+    await tester.pumpWidget(SmartParkingApp(auth: auth, verifyUser: () async {}));
     await tester.pumpAndSettle();
 
     expect(find.text('Smart Parking'), findsOneWidget);
