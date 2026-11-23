@@ -7,4 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface MapVersionRepository extends JpaRepository<MapVersion, UUID> {
     Optional<MapVersion> findFirstByFloorIdOrderByVersionDesc(UUID floorId);
+    boolean existsByFloorId(UUID floorId);
 }

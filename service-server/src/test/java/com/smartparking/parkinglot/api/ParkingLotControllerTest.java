@@ -15,6 +15,7 @@ import com.smartparking.global.security.Role;
 import com.smartparking.parkinglot.application.*;
 import com.smartparking.parkinglot.domain.*;
 import com.smartparking.parkinglot.dto.response.*;
+import com.smartparking.installation.application.InstallationReadinessService;
 import com.smartparking.service.config.SecurityConfig;
 import java.util.*;
 import org.junit.jupiter.api.*;
@@ -119,6 +120,7 @@ class ParkingLotControllerTest {
     @Import({SecurityConfig.class, AdminParkingLotController.class, ParkingLotController.class, ParkingLotErrorHandler.class})
     static class Config {
         @Bean ParkingLotService service() { return mock(ParkingLotService.class); }
+        @Bean InstallationReadinessService installation() { return mock(InstallationReadinessService.class); }
         @Bean ObjectMapper objectMapper() { return JsonMapper.builder().findAndAddModules().build(); }
         @Bean JsonAuthenticationEntryPoint entryPoint(ObjectMapper mapper) { return new JsonAuthenticationEntryPoint(mapper); }
         @Bean JsonAccessDeniedHandler denied(ObjectMapper mapper) { return new JsonAccessDeniedHandler(mapper); }
