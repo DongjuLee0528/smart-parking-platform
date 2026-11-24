@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 import 'features/authentication/presentation/pages/login_page.dart';
+import 'features/location/presentation/widgets/location_permission_prompt.dart';
 import 'shared/api/api_client.dart';
 import 'shared/firebase/firebase_auth_boundary.dart';
 
@@ -109,7 +110,12 @@ class _VerifiedHomeState extends State<_VerifiedHome> {
                 children: [
                   const Text('서버에서 계정을 확인하지 못했습니다.'),
                   TextButton(
-                    onPressed: () => setState(() => _verification = _verify()),
+                    onPressed: () {
+                      final verification = _verify();
+                      setState(() {
+                        _verification = verification;
+                      });
+                    },
                     child: const Text('다시 시도'),
                   ),
                   TextButton(
@@ -177,7 +183,13 @@ class HomePage extends StatelessWidget {
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: features.length,
-        itemBuilder: (context, index) => ListTile(title: Text(features[index])),
+        itemBuilder: (context, index) {
+          final feature = features[index];
+          if (feature == 'Nearby parking lots') {
+            return const LocationPermissionPrompt();
+          }
+          return ListTile(title: Text(feature));
+        },
       ),
     );
   }
