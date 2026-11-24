@@ -49,6 +49,18 @@ class _LocationPermissionPromptState extends State<LocationPermissionPrompt> {
 
   @override
   Widget build(BuildContext context) {
-    return const SizedBox.shrink();
+    return ExpansionTile(
+      title: const Text('Nearby parking lots'),
+      childrenPadding: const EdgeInsets.all(16),
+      children: [
+        const Text('현재 위치는 가까운 주차장을 찾는 데 사용해요.'),
+        TextButton(
+          onPressed: _requesting ? null : _request,
+          child: const Text('위치 권한 요청'),
+        ),
+        if (_feedback != null)
+          Semantics(liveRegion: true, child: Text(_feedback!)),
+      ],
+    );
   }
 }
