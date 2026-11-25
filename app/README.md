@@ -10,6 +10,10 @@ fvm flutter analyze
 fvm flutter test
 ```
 
+For iOS builds using Swift Package Manager, set
+`BYPASS_PERMISSION_LOCATION_ALWAYS=1` for the Flutter build so geolocator only
+requests foreground location authorization.
+
 ## Local Credentials
 
 Add these files locally. Do not commit them:

@@ -46,5 +46,5 @@ class FirebaseAuthentication implements FirebaseAuthBoundary {
 
   @override
   Future<String?> getIdToken({bool forceRefresh = false}) async =>
-      _auth.currentUser?.getIdToken(forceRefresh: forceRefresh);
+      _auth.currentUser?.getIdToken(forceRefresh);
 }
