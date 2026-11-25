@@ -128,6 +128,17 @@ describe('floor map editor', () => {
     }]);
   });
 
+  it('shows and allows removal of a camera mapping no longer on the floor', async () => {
+    vi.mocked(getFloorCameras).mockResolvedValue([]);
+    render(<FloorMapEditor floorId="floor-id" />);
+    fireEvent.pointerDown(await screen.findByRole('button', { name: '주차면 B-12' }),
+      { clientX: 200, clientY: 100, pointerId: 1 });
+    expect(screen.getByRole('option', { name: '이 층에서 찾을 수 없는 기존 연결 카메라' })).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent('기존 카메라가 이 층에 없습니다');
+    fireEvent.click(screen.getByRole('button', { name: '이 카메라 연결 해제' }));
+    expect(screen.getByRole('button', { name: '변경 사항 저장' })).toBeEnabled();
+  });
+
   it('keeps unsaved edits when the server rejects a stale version', async () => {
     vi.mocked(saveParkingSpaces).mockRejectedValue({
       isAxiosError: true, response: { status: 409, data: { code: 'VERSION_CONFLICT' } },
