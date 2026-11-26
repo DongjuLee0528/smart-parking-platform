@@ -103,6 +103,7 @@ export function FloorManagementPage() {
   return <main className="shell">
     <Link to="/">Dashboard</Link>
     <h1>Floors and zones</h1>
+    {lotId && <p><Link to={`/parking-lots/${encodeURIComponent(lotId)}/installation-check`}>설치 완료 검증</Link></p>}
     {error && <p role="alert">{error}</p>}
     <form onSubmit={(event) => void addFloor(event)}>
       <label>New floor <input value={name} maxLength={100} onChange={(event) => setName(event.target.value)} required /></label>

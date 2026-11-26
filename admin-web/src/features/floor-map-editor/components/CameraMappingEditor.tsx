@@ -98,11 +98,15 @@ export function CameraMappingEditor({ space, cameras, disabled, onChange }: Prop
     <select id="map-camera" value={cameraId} disabled={disabled || !cameras.length}
       onChange={(event) => chooseCamera(event.target.value)}>
       <option value="">카메라 선택</option>
+      {cameraId && !selectedCamera && <option value={cameraId}>이 층에서 찾을 수 없는 기존 연결 카메라</option>}
       {cameras.map((camera) => <option key={camera.id} value={camera.id}
         disabled={space.cameraMappings.length >= 8 && !space.cameraMappings.some((item) => item.cameraId === camera.id)}>
         {camera.name}</option>)}
     </select>
     {!cameras.length && <p className="map-hint">이 층에 등록된 카메라가 없습니다.</p>}
+    {mapping && !selectedCamera && <p role="alert" className="map-message map-error">
+      기존 카메라가 이 층에 없습니다. 연결을 해제하거나 올바른 카메라로 다시 지정하세요.
+    </p>}
     {selectedCamera && <>
       <p className="map-hint">{selectedCamera.name} · {selectedCamera.status} · {mapping ? '영역 연결됨' : '영역 미설정'}</p>
       <label htmlFor="map-camera-frame">카메라 정지 화면 (PNG 또는 JPEG)</label>
@@ -125,9 +129,9 @@ export function CameraMappingEditor({ space, cameras, disabled, onChange }: Prop
         </svg>}
       </div>}
       {frameSize && <p className="map-hint">화면에서 주차면 영역의 한쪽 끝에서 반대쪽 끝까지 드래그하세요.</p>}
-      {mapping && <button type="button" disabled={disabled} onClick={() =>
-        onChange(space.cameraMappings.filter((item) => item.cameraId !== cameraId))}>이 카메라 연결 해제</button>}
     </>}
+    {mapping && <button type="button" disabled={disabled} onClick={() =>
+      onChange(space.cameraMappings.filter((item) => item.cameraId !== cameraId))}>이 카메라 연결 해제</button>}
     {space.cameraMappings.length > 0 && <p className="map-hint">연결된 카메라 {space.cameraMappings.length}개 · 저장 버튼으로 확정</p>}
   </section>;
 }
