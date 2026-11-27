@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:smart_parking_app/features/location/application/current_location_controller.dart';
 import 'package:smart_parking_app/features/location/application/location_permission_controller.dart';
+import 'package:smart_parking_app/features/location/domain/current_location.dart';
 import 'package:smart_parking_app/features/location/presentation/widgets/location_permission_prompt.dart';
 
 class _FakeController extends LocationPermissionController {
@@ -17,12 +19,23 @@ class _FakeController extends LocationPermissionController {
   }
 }
 
+class _FakeCurrentLocation extends CurrentLocationController {
+  @override
+  Future<CurrentLocation> load() async =>
+      const CurrentLocation(latitude: 37.5, longitude: 127.0);
+}
+
 void main() {
   testWidgets('explains location use before explicitly requesting permission',
       (tester) async {
     final controller = _FakeController();
     await tester.pumpWidget(MaterialApp(
-      home: Scaffold(body: LocationPermissionPrompt(controller: controller)),
+      home: Scaffold(
+        body: LocationPermissionPrompt(
+          controller: controller,
+          currentLocation: _FakeCurrentLocation(),
+        ),
+      ),
     ));
     expect(controller.requests, 0);
 

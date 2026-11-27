@@ -1,3 +1,6 @@
 class CurrentLocation {
-  const CurrentLocation();
+  const CurrentLocation({required this.latitude, required this.longitude});
+
+  final double latitude;
+  final double longitude;
 }

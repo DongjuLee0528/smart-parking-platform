@@ -5,6 +5,8 @@ import com.smartparking.global.security.CurrentUserPrincipal;
 import com.smartparking.parkinglot.application.ParkingLotService;
 import com.smartparking.parkinglot.dto.request.*;
 import com.smartparking.parkinglot.dto.response.*;
+import com.smartparking.installation.application.InstallationReadinessService;
+import com.smartparking.installation.dto.response.InstallationReadinessResponse;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import org.springframework.http.*;
@@ -15,7 +17,16 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/admin/parking-lots")
 public class AdminParkingLotController {
     private final ParkingLotService service;
-    public AdminParkingLotController(ParkingLotService service) { this.service = service; }
+    private final InstallationReadinessService installation;
+    public AdminParkingLotController(ParkingLotService service, InstallationReadinessService installation) {
+        this.service = service;
+        this.installation = installation;
+    }
+
+    @GetMapping("/{lotId}/installation-check")
+    public ApiResponse<InstallationReadinessResponse> installationCheck(@PathVariable UUID lotId) {
+        return new ApiResponse<>(installation.check(lotId));
+    }
 
     @PostMapping
     public ResponseEntity<ApiResponse<ParkingLotDetailResponse>> create(
