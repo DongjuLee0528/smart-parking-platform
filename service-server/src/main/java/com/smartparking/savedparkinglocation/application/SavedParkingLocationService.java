@@ -6,6 +6,7 @@ import com.smartparking.global.error.ErrorCode;
 import com.smartparking.occupancy.domain.OccupancyState;
 import com.smartparking.occupancy.infrastructure.OccupancyCurrentRepository;
 import com.smartparking.parkingspace.infrastructure.ParkingSpaceRepository;
+import com.smartparking.parkinglot.domain.OperationStatus;
 import com.smartparking.savedparkinglocation.domain.SavedParkingLocation;
 import com.smartparking.savedparkinglocation.dto.request.SaveParkingLocationRequest;
 import com.smartparking.savedparkinglocation.dto.response.SavedParkingLocationResponse;
@@ -50,6 +51,12 @@ public class SavedParkingLocationService {
         if (!space.isActive()) {
             throw new SavedParkingLocationException(ErrorCode.VALIDATION_FAILED, "Parking space is inactive");
         }
+        var zone = space.getZone();
+        var floor = zone.getFloor();
+        var lot = floor.getParkingLot();
+        if (!zone.isActive() || !floor.isActive() || lot.getOperationStatus() != OperationStatus.ACTIVE) {
+            throw new SavedParkingLocationException(ErrorCode.PARKING_SPACE_NOT_FOUND, "Parking space not found");
+        }
         var active = locations.findByUserIdAndReleasedAtIsNull(userId);
         var state = occupancy.findById(space.getId()).map(current -> current.getState()).orElse(null);
         if (!Boolean.TRUE.equals(request.confirm())) {
@@ -62,9 +69,6 @@ public class SavedParkingLocationService {
                     "Selected parking space is empty; confirm saving");
             }
         }
-        var zone = space.getZone();
-        var floor = zone.getFloor();
-        var lot = floor.getParkingLot();
         var snapshot = new Snapshot(lot.getId(), lot.getName(), floor.getId(), floor.getName(),
             zone.getId(), zone.getName(), space.getSpaceNumber(), null, state);
         active.ifPresent(SavedParkingLocation::release);
