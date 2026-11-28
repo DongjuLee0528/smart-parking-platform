@@ -247,6 +247,8 @@ class FloorEventControllerTest {
         var lot = lots.saveAndFlush(new ParkingLot(new CreateParkingLotRequest("Lot " + floorName,
             "Address", 37.5, 127.0, "", "", List.of(
                 new CreateParkingLotRequest.Floor(floorName, -1, List.of("A"))))));
+        lot.activate();
+        lots.saveAndFlush(lot);
         var zone = lot.getFloors().get(0).getZones().get(0);
         var camera = cameras.saveAndFlush(new Camera(zone, "Camera", "CAMERA_" + floorName));
         var space = spaces.saveAndFlush(new ParkingSpace(zone, "A-01", ParkingSpaceType.GENERAL,

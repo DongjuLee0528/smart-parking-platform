@@ -28,6 +28,14 @@ public class AdminParkingLotController {
         return new ApiResponse<>(installation.check(lotId));
     }
 
+    @PostMapping("/{lotId}/activate")
+    public ApiResponse<ParkingLotDetailResponse> activate(
+        @AuthenticationPrincipal CurrentUserPrincipal principal, @PathVariable UUID lotId,
+        @Valid @RequestBody ActivateParkingLotRequest request
+    ) {
+        return new ApiResponse<>(service.activate(principal.userId(), lotId, request));
+    }
+
     @PostMapping
     public ResponseEntity<ApiResponse<ParkingLotDetailResponse>> create(
         @AuthenticationPrincipal CurrentUserPrincipal principal, @Valid @RequestBody CreateParkingLotRequest request

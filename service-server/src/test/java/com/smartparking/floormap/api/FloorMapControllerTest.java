@@ -251,8 +251,10 @@ class FloorMapControllerTest {
     }
 
     private ParkingLot lot() {
-        return lots.saveAndFlush(new ParkingLot(new CreateParkingLotRequest("Lot", "Address",
+        var lot = lots.saveAndFlush(new ParkingLot(new CreateParkingLotRequest("Lot", "Address",
             37.5, 127.0, "", "", List.of(new CreateParkingLotRequest.Floor("B1", -1,
                 List.of("A"))))));
+        lot.activate();
+        return lots.saveAndFlush(lot);
     }
 }

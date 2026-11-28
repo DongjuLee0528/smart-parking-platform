@@ -13,6 +13,7 @@ import com.smartparking.occupancy.domain.OccupancyCurrent;
 import com.smartparking.occupancy.domain.OccupancyState;
 import com.smartparking.occupancy.infrastructure.OccupancyCurrentRepository;
 import com.smartparking.parkingfloor.infrastructure.ParkingFloorRepository;
+import com.smartparking.parkinglot.domain.OperationStatus;
 import com.smartparking.parkingspace.application.ParkingSpaceService;
 import com.smartparking.streaming.application.FloorEventStreamService;
 import org.springframework.context.ApplicationEventPublisher;
@@ -71,8 +72,9 @@ public class FloorMapService {
     }
 
     @Transactional(readOnly = true)
-    public MapVersion drawing(UUID floorId) {
-        if (floors.findById(floorId).filter(floor -> floor.isActive()).isEmpty()) {
+    public MapVersion drawing(UUID floorId, boolean admin) {
+        if (floors.findById(floorId).filter(floor -> floor.isActive() &&
+            (admin || floor.getParkingLot().getOperationStatus() == OperationStatus.ACTIVE)).isEmpty()) {
             throw new FloorMapException(ErrorCode.PARKING_FLOOR_NOT_FOUND, "Parking floor not found");
         }
         return drawings.findFirstByFloorIdOrderByVersionDesc(floorId).orElseThrow(() ->
@@ -80,11 +82,11 @@ public class FloorMapService {
     }
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
-    public FloorMapSnapshotResponse snapshot(UUID floorId) {
+    public FloorMapSnapshotResponse snapshot(UUID floorId, boolean admin) {
         var eventVersion = events.latestEventId(floorId);
         var floor = floors.findById(floorId).orElseThrow(() ->
             new FloorMapException(ErrorCode.PARKING_FLOOR_NOT_FOUND, "Parking floor not found"));
-        if (!floor.isActive()) {
+        if (!floor.isActive() || !admin && floor.getParkingLot().getOperationStatus() != OperationStatus.ACTIVE) {
             throw new FloorMapException(ErrorCode.PARKING_FLOOR_NOT_FOUND, "Parking floor not found");
         }
         var layout = spaces.detail(floorId);
